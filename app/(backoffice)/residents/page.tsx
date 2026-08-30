@@ -20,7 +20,7 @@ export default function ResidentsPage() {
   useEffect(() => { if (!branchId && branches.data[0]) setBranchId(branches.data[0].id); }, [branchId, branches.data]);
   useEffect(() => setItems(residents.data), [residents.data]);
   const visible = useMemo(() => items.filter((resident) => `${resident.fullName} ${resident.phone ?? ""} ${resident.contracts[0]?.room.number ?? ""}`.toLowerCase().includes(search.toLowerCase())), [items, search]);
-  const link = branch?.claimUrl ?? branch?.residentClaimUrl ?? (branch?.claimCode ? `${process.env.NEXT_PUBLIC_MINIAPP_URL ?? "http://localhost:3102"}/join/${branch.claimCode}` : null);
+  const link = branch?.claimUrl ?? branch?.residentClaimUrl ?? null;
   async function copyLink() { if (!link) return; await navigator.clipboard.writeText(link); setCopied(true); window.setTimeout(() => setCopied(false), 1800); }
   return <>
     <section className="resident-hero"><div><div className="eyebrow">ผู้เช่าและการยืนยันตัวตน</div><h1>เชิญผู้เช่าเข้าห้อง</h1><p className="subtitle">ผู้เช่าลงทะเบียนเองจากลิงก์ของสาขา ระบุเลขห้อง แล้วเชื่อมบัญชี LINE ในขั้นตอนเดียว</p></div></section>

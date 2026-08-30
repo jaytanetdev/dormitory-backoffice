@@ -9,7 +9,7 @@ import { useApiQuery } from "@/lib/use-api";
 const emptyBranches: BranchDto[] = [];
 type BranchForm = { name:string; code:string; address:string; phone:string; lineName:string; channelId:string; liffId:string; channelAccessToken:string; channelSecret:string };
 const initialForm: BranchForm = { name:"", code:"", address:"", phone:"", lineName:"", channelId:"", liffId:"", channelAccessToken:"", channelSecret:"" };
-const claimUrl = (branch: BranchDto) => branch.claimUrl ?? branch.residentClaimUrl ?? (branch.claimCode ? `${process.env.NEXT_PUBLIC_MINIAPP_URL ?? "http://localhost:3102"}/claim/${branch.claimCode}` : null);
+const claimUrl = (branch: BranchDto) => branch.claimUrl ?? branch.residentClaimUrl ?? null;
 const codeFromName = (name: string) => name.trim().replace(/[^a-zA-Z0-9ก-๙]/g, "").slice(0, 12).toUpperCase();
 
 function LineStatus({ branch }: { branch: BranchDto }) {
