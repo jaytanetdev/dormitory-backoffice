@@ -4,18 +4,17 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ApiNotice } from "@/components/api-notice";
 import { Status } from "@/components/status";
+import { useBranch } from "@/components/branch-context";
 import { apiMutation } from "@/lib/api";
-import type { BranchDto, ResidentDto } from "@/lib/api-types";
+import type { ResidentDto } from "@/lib/api-types";
 import { useApiQuery } from "@/lib/use-api";
 
-const noBranches: BranchDto[] = [];
 const noResidents: ResidentDto[] = [];
 const today = () => new Date().toISOString().slice(0, 10);
 type MoveOutTarget = { residentId: string; residentName: string; contractId: string; roomNumber: string };
 
 export default function ResidentsPage() {
-  const branches = useApiQuery("/branches", noBranches);
-  const [branchId, setBranchId] = useState("");
+  const { selectedBranch: branch, selectedBranchId: branchId, loading: branchesLoading } = useBranch();
   const residents = useApiQuery(branchId ? `/branches/${branchId}/residents` : null, noResidents);
   const [items, setItems] = useState<ResidentDto[]>([]);
   const [search, setSearch] = useState("");
@@ -24,9 +23,6 @@ export default function ResidentsPage() {
   const [moveOutDate, setMoveOutDate] = useState(today());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const branch = branches.data.find((item) => item.id === branchId);
-
-  useEffect(() => { if (!branchId && branches.data[0]) setBranchId(branches.data[0].id); }, [branchId, branches.data]);
   useEffect(() => setItems(residents.data), [residents.data]);
   const visible = useMemo(() => items.filter((resident) => `${resident.fullName} ${resident.phone ?? ""} ${resident.contracts[0]?.room.number ?? ""}`.toLowerCase().includes(search.toLowerCase())), [items, search]);
   const link = branch?.claimUrl ?? branch?.residentClaimUrl ?? null;
@@ -44,8 +40,8 @@ export default function ResidentsPage() {
 
   return <>
     <section className="resident-hero"><div><div className="eyebrow">ผู้เช่าและสัญญาเช่า</div><h1>จัดการผู้เช่าเข้า–ออก</h1><p className="subtitle">เชื่อมผู้เช่ากับห้องผ่าน LINE และปิดสัญญาเมื่อย้ายออกโดยยังเก็บประวัติบิลเดิม</p></div></section>
-    <ApiNotice loading={branches.loading || residents.loading} error={branches.error || residents.error || error} />
-    <section className="invite-flow-card"><div className="invite-flow-head"><div><span className="flow-chip">รับผู้เช่าใหม่</span><h2>ลิงก์ลงทะเบียนของสาขา</h2><p>สำหรับลิงก์ระบุห้องโดยตรง ให้สร้างจากปุ่ม “เชิญผู้เช่า” ในหน้าห้องพัก</p></div><select className="filter" aria-label="เลือกสาขา" value={branchId} onChange={(event) => setBranchId(event.target.value)}>{branches.data.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
+    <ApiNotice loading={branchesLoading || residents.loading} error={residents.error || error} />
+    <section className="invite-flow-card"><div className="invite-flow-head"><div><span className="flow-chip">รับผู้เช่าใหม่</span><h2>ลิงก์ลงทะเบียนของสาขา {branch ? `· ${branch.name}` : ""}</h2><p>เปลี่ยนสาขาได้จากตัวเลือกมุมขวาบน สำหรับลิงก์ระบุห้องโดยตรง ให้สร้างจากปุ่ม “เชิญผู้เช่า” ในหน้าห้องพัก</p></div></div>
       <div className="invite-flow-body"><div className="invite-step"><b>1</b><span>สร้างลิงก์จากห้องที่ว่าง</span></div><div className="invite-step"><b>2</b><span>ผู้เช่ายืนยันตัวตนผ่าน LINE</span></div><div className="invite-step"><b>3</b><span>ระบบสร้างผู้เช่าและสัญญาอัตโนมัติ</span></div></div>
       <div className="invite-link-row">{link ? <><code>{link}</code><button className="button" type="button" onClick={() => void copyLink()}>{copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์สาขา"}</button></> : <span className="link-pending">สาขานี้ยังไม่ได้ตั้งค่า LINE Mini App</span>}</div>
     </section>

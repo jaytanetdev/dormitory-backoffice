@@ -1,4 +1,44 @@
 "use client";
-import { useEffect,useState } from "react";import { PageHead } from "@/components/page-head";import { Status } from "@/components/status";import { ApiNotice } from "@/components/api-notice";import { useApiQuery } from "@/lib/use-api";import { apiMutation } from "@/lib/api";import type { BranchDto,PaymentDto } from "@/lib/api-types";
-const branches:BranchDto[]=[{id:"demo-rangsit",name:"สาขารังสิต",code:"RGT"}];const demo:PaymentDto[]=[{id:"PAY-0841",amount:4780,createdAt:"2026-08-29T18:42:00Z",status:"PENDING",invoice:{room:{number:"202"},contract:{resident:{fullName:"ชนาธิป นาคิน"}}},slip:{fileUrl:"/demo-slip.jpg"}}];
-export default function Payments(){const b=useApiQuery("/branches",branches);const branchId=b.data[0]?.id;const query=useApiQuery(branchId?`/branches/${branchId}/payments/pending`:null,demo);const [items,setItems]=useState(query.data);const [busy,setBusy]=useState<string|null>(null);const [error,setError]=useState<string|null>(null);useEffect(()=>setItems(query.data),[query.data]);async function approve(id:string){setBusy(id);setError(null);const result=await apiMutation(`/payments/${id}/approve`,{});setBusy(null);if(!result.ok){setError(result.message);return}setItems(v=>v.filter(x=>x.id!==id))}return <><PageHead eyebrow="การเงิน" title="ตรวจสอบการชำระ" subtitle="เปรียบเทียบยอดและหลักฐานก่อนปิดบิล"/><ApiNotice loading={b.loading||query.loading} error={b.error||query.error||error}/><section className="summary-strip"><div className="metric"><small>รอตรวจสอบ</small><strong className="mono">{items.length}</strong></div><div className="metric"><small>ยอดรอตรวจ</small><strong className="mono">฿{items.reduce((s,x)=>s+Number(x.amount),0).toLocaleString()}</strong></div><div className="metric"><small>สถานะ API</small><strong style={{fontSize:18}}>เชื่อมต่อแล้ว</strong></div><div className="metric"><small>ขอบเขต</small><strong style={{fontSize:18}}>{b.data[0]?.name||"—"}</strong></div></section><div className="table-wrap"><table className="data-table"><thead><tr><th>รายการ</th><th>ห้อง / ผู้เช่า</th><th>เวลาที่แจ้ง</th><th>ยอดโอน</th><th>สถานะ</th><th>ตรวจสอบ</th></tr></thead><tbody>{items.map(p=><tr key={p.id}><td className="mono">{p.id}</td><td><strong>{p.invoice.room.number}</strong><br/><small>{p.invoice.contract.resident.fullName}</small></td><td>{new Date(p.createdAt).toLocaleString("th-TH")}</td><td className="money">฿{Number(p.amount).toLocaleString()}</td><td><Status>รอตรวจสลิป</Status></td><td><button className="button" disabled={busy===p.id} onClick={()=>approve(p.id)}>{busy===p.id?"กำลังอนุมัติ…":"อนุมัติยอด"}</button></td></tr>)}</tbody></table>{!items.length&&!query.loading&&<p style={{padding:20,color:"var(--muted)"}}>ไม่มีรายการรอตรวจสอบ</p>}</div></>}
+
+import { useEffect, useState } from "react";
+import { PageHead } from "@/components/page-head";
+import { Status } from "@/components/status";
+import { ApiNotice } from "@/components/api-notice";
+import { useBranch } from "@/components/branch-context";
+import { apiMutation } from "@/lib/api";
+import type { PaymentDto } from "@/lib/api-types";
+import { useApiQuery } from "@/lib/use-api";
+
+const noPayments: PaymentDto[] = [];
+
+export default function PaymentsPage() {
+  const { selectedBranch, selectedBranchId, loading: branchesLoading } = useBranch();
+  const query = useApiQuery(selectedBranchId ? `/branches/${selectedBranchId}/payments/pending` : null, noPayments);
+  const [items, setItems] = useState<PaymentDto[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => setItems(query.data), [query.data]);
+
+  async function approve(id: string) {
+    setBusy(id); setError(null);
+    const result = await apiMutation(`/payments/${id}/approve`, {});
+    setBusy(null);
+    if (!result.ok) { setError(result.message); return; }
+    setItems((current) => current.filter((item) => item.id !== id));
+  }
+
+  return <>
+    <PageHead eyebrow="การเงิน" title="ตรวจสอบการชำระ" subtitle={selectedBranch ? `รายการรอตรวจของ ${selectedBranch.name}` : "เลือกสาขาจากมุมขวาบนเพื่อดูรายการ"} />
+    <ApiNotice loading={branchesLoading || query.loading} error={query.error || error} />
+    {!selectedBranch ? <section className="empty-state">ยังไม่มีสาขาให้เลือก</section> : <>
+      <section className="summary-strip">
+        <div className="metric"><small>รอตรวจสอบ</small><strong className="mono">{items.length}</strong></div>
+        <div className="metric"><small>ยอดรอตรวจ</small><strong className="mono">฿{items.reduce((sum, item) => sum + Number(item.amount), 0).toLocaleString()}</strong></div>
+        <div className="metric"><small>สาขาที่กำลังดู</small><strong style={{ fontSize: 18 }}>{selectedBranch.name}</strong></div>
+      </section>
+      <div className="table-wrap"><table className="data-table"><thead><tr><th>รายการ</th><th>ห้อง / ผู้เช่า</th><th>เวลาที่แจ้ง</th><th>ยอดโอน</th><th>สถานะ</th><th>ตรวจสอบ</th></tr></thead><tbody>
+        {items.map((payment) => <tr key={payment.id}><td className="mono">{payment.id}</td><td><strong>{payment.invoice.room.number}</strong><br /><small>{payment.invoice.contract.resident.fullName}</small></td><td>{new Date(payment.createdAt).toLocaleString("th-TH")}</td><td className="money">฿{Number(payment.amount).toLocaleString()}</td><td><Status>รอตรวจสลิป</Status></td><td><button className="button" disabled={busy === payment.id} onClick={() => void approve(payment.id)}>{busy === payment.id ? "กำลังอนุมัติ…" : "อนุมัติยอด"}</button></td></tr>)}
+      </tbody></table>{!items.length && !query.loading && <p className="empty-state">ไม่มีรายการรอตรวจสอบในสาขานี้</p>}</div>
+    </>}
+  </>;
+}
