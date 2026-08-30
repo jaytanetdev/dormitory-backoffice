@@ -1,3 +1,128 @@
-"use client";import { useEffect,useMemo,useState } from "react";import { PageHead } from "@/components/page-head";import { Status } from "@/components/status";import { ApiNotice } from "@/components/api-notice";import { useApiQuery } from "@/lib/use-api";import { apiMutation } from "@/lib/api";import type { BranchDto,InvoiceDto } from "@/lib/api-types";
-type Contract={id:string;monthlyRent:number|string;room:{id:string;number:string};resident:{fullName:string}};type Period={id:string;year:number;month:number;dueDate:string};const noBranches:BranchDto[]=[];const noInvoices:InvoiceDto[]=[];const noContracts:Contract[]=[];const statuses:Record<string,string>={DRAFT:"แบบร่าง",ISSUED:"รอชำระ",PARTIALLY_PAID:"ชำระบางส่วน",PAID:"ชำระแล้ว",OVERDUE:"เกินกำหนด",VOID:"ยกเลิก"};
-export default function Bills(){const branches=useApiQuery("/branches",noBranches);const branchId=branches.data[0]?.id;const invoices=useApiQuery(branchId?`/branches/${branchId}/invoices`:null,noInvoices);const contracts=useApiQuery(branchId?`/branches/${branchId}/contracts`:null,noContracts);const [items,setItems]=useState<InvoiceDto[]>([]);const [query,setQuery]=useState("");const [open,setOpen]=useState(false);const [busy,setBusy]=useState(false);const [error,setError]=useState<string|null>(null);useEffect(()=>setItems(invoices.data),[invoices.data]);const visible=useMemo(()=>items.filter(b=>!query||`${b.number} ${b.room.number} ${b.contract.resident.fullName}`.toLowerCase().includes(query.toLowerCase())),[items,query]);const amount=(bill:InvoiceDto,code:string)=>Number(bill.items.find(x=>(x.code||x.type)===code)?.amount||0);async function create(e:React.FormEvent<HTMLFormElement>){e.preventDefault();if(!branchId)return;setBusy(true);setError(null);const f=new FormData(e.currentTarget);const contract=contracts.data.find(c=>c.id===String(f.get("contractId")));const period=await apiMutation<Period>(`/branches/${branchId}/billing-periods`,{year:Number(f.get("year")),month:Number(f.get("month")),dueDate:String(f.get("dueDate"))});if(!period.ok){setBusy(false);setError(period.message);return}const lineItems=[{code:"RENT",description:"ค่าเช่า",quantity:1,unitPrice:Number(f.get("rent"))},{code:"WATER",description:"ค่าน้ำ",quantity:1,unitPrice:Number(f.get("water"))},{code:"ELECTRICITY",description:"ค่าไฟ",quantity:1,unitPrice:Number(f.get("electricity"))}].filter(x=>x.unitPrice>0);const result=await apiMutation<InvoiceDto>("/invoices",{branchId,periodId:period.data.id,contractId:String(f.get("contractId")),number:`INV-${Date.now()}`,discount:0,items:lineItems});setBusy(false);if(!result.ok){setError(result.message);return}const total=lineItems.reduce((s,x)=>s+x.unitPrice,0);setItems(v=>[{...result.data,total,status:"DRAFT",room:{number:contract?.room.number||"—"},contract:{resident:{fullName:contract?.resident.fullName||"—"}},items:lineItems.map(x=>({...x,type:x.code,amount:x.unitPrice}))},...v]);setOpen(false)}return <><PageHead eyebrow="การเงิน" title="ใบแจ้งหนี้" subtitle="สร้างรอบบิลและใบแจ้งหนี้จากสัญญาที่กำลังใช้งาน"/><div className="page-head-actions"><button className="button" onClick={()=>setOpen(true)}>＋ สร้างใบแจ้งหนี้</button></div><ApiNotice loading={branches.loading||invoices.loading||contracts.loading} error={branches.error||invoices.error||contracts.error||error}/>{open&&<div className="modal-backdrop"><section className="modal"><div className="modal-head"><h2>สร้างใบแจ้งหนี้</h2><button className="icon-button" onClick={()=>setOpen(false)}>×</button></div><form onSubmit={create}><label className="field"><span>สัญญา / ห้อง</span><select name="contractId" required>{contracts.data.filter(c=>true).map(c=><option key={c.id} value={c.id}>{c.room.number} · {c.resident.fullName}</option>)}</select></label><div className="form-row"><label className="field"><span>ปี</span><input name="year" type="number" defaultValue={new Date().getFullYear()} required/></label><label className="field"><span>เดือน</span><input name="month" type="number" min="1" max="12" defaultValue={new Date().getMonth()+1} required/></label></div><label className="field"><span>วันครบกำหนด</span><input name="dueDate" type="date" required/></label><label className="field"><span>ค่าเช่า</span><input name="rent" type="number" min="0" required/></label><label className="field"><span>ค่าน้ำ</span><input name="water" type="number" min="0" defaultValue="0"/></label><label className="field"><span>ค่าไฟ</span><input name="electricity" type="number" min="0" defaultValue="0"/></label><div className="modal-actions"><button type="button" className="button ghost" onClick={()=>setOpen(false)}>ยกเลิก</button><button className="button" disabled={busy||!contracts.data.length}>{busy?"กำลังสร้าง…":"สร้างใบแจ้งหนี้"}</button></div></form></section></div>}<div className="toolbar"><input className="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="ค้นหาเลขบิล ห้อง หรือผู้เช่า"/><button className="button secondary">ส่งออก</button></div><div className="table-wrap"><table className="data-table"><thead><tr><th>เลขที่</th><th>ห้อง / ผู้เช่า</th><th>ค่าเช่า</th><th>น้ำ</th><th>ไฟ</th><th>ยอดรวม</th><th>สถานะ</th></tr></thead><tbody>{visible.map(b=><tr key={b.id}><td className="mono">{b.number}</td><td><strong>{b.room.number}</strong><br/><small>{b.contract.resident.fullName}</small></td><td>฿{amount(b,"RENT").toLocaleString()}</td><td>฿{amount(b,"WATER").toLocaleString()}</td><td>฿{amount(b,"ELECTRICITY").toLocaleString()}</td><td><strong>฿{Number(b.total).toLocaleString()}</strong></td><td><Status>{statuses[b.status]||b.status}</Status></td></tr>)}</tbody></table>{!visible.length&&!invoices.loading&&<p className="empty-state">ยังไม่มีใบแจ้งหนี้ ต้องสร้างผู้เช่าและสัญญาเช่าก่อน</p>}</div></>}
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { ApiNotice } from "@/components/api-notice";
+import { useBranch } from "@/components/branch-context";
+import { PageHead } from "@/components/page-head";
+import { Status } from "@/components/status";
+import { apiGet, apiMutation } from "@/lib/api";
+import type { InvoiceDto } from "@/lib/api-types";
+import { useApiQuery } from "@/lib/use-api";
+
+type Contract = { id: string; status: string; monthlyRent: number | string; room: { id: string; number: string }; resident: { fullName: string } };
+type Period = { id: string; year: number; month: number; dueDate: string };
+type Reading = { id: string; currentValue: number | string; unitRate: number | string; readingDate: string };
+type LatestReadings = { WATER: Reading | null; ELECTRIC: Reading | null };
+type MeterForm = { previous: number; current: number; rate: number; hasHistory: boolean };
+
+const noInvoices: InvoiceDto[] = [];
+const noContracts: Contract[] = [];
+const emptyMeters: LatestReadings = { WATER: null, ELECTRIC: null };
+const statuses: Record<string, string> = { DRAFT: "แบบร่าง", ISSUED: "รอชำระ", PENDING_REVIEW: "รอตรวจสลิป", PARTIALLY_PAID: "ชำระบางส่วน", PAID: "ชำระแล้ว", OVERDUE: "เกินกำหนด", VOID: "ยกเลิก" };
+const today = () => new Date().toISOString().slice(0, 10);
+
+export default function BillsPage() {
+  const { selectedBranchId: branchId, loading: branchesLoading } = useBranch();
+  const invoices = useApiQuery(branchId ? `/branches/${branchId}/invoices` : null, noInvoices);
+  const contracts = useApiQuery(branchId ? `/branches/${branchId}/contracts` : null, noContracts);
+  const [items, setItems] = useState<InvoiceDto[]>([]);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [issuingId, setIssuingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [contractId, setContractId] = useState("");
+  const [meterLoading, setMeterLoading] = useState(false);
+  const [water, setWater] = useState<MeterForm>({ previous: 0, current: 0, rate: 0, hasHistory: false });
+  const [electric, setElectric] = useState<MeterForm>({ previous: 0, current: 0, rate: 0, hasHistory: false });
+
+  const activeContracts = useMemo(() => contracts.data.filter((contract) => contract.status === "ACTIVE"), [contracts.data]);
+  const selectedContract = activeContracts.find((contract) => contract.id === contractId);
+  const selectedRoomId = selectedContract?.room.id;
+  useEffect(() => setItems(invoices.data), [invoices.data]);
+  useEffect(() => { if (open && !contractId && activeContracts[0]) setContractId(activeContracts[0].id); }, [activeContracts, contractId, open]);
+  useEffect(() => {
+    if (!selectedRoomId) return;
+    let active = true;
+    setMeterLoading(true);
+    void apiGet(`/rooms/${selectedRoomId}/meter-readings/latest`, emptyMeters).then((result) => {
+      if (!active) return;
+      setMeterLoading(false);
+      if (!result.ok) { setError(result.message); return; }
+      const waterPrevious = Number(result.data.WATER?.currentValue ?? 0);
+      const electricPrevious = Number(result.data.ELECTRIC?.currentValue ?? 0);
+      setWater({ previous: waterPrevious, current: waterPrevious, rate: Number(result.data.WATER?.unitRate ?? 0), hasHistory: Boolean(result.data.WATER) });
+      setElectric({ previous: electricPrevious, current: electricPrevious, rate: Number(result.data.ELECTRIC?.unitRate ?? 0), hasHistory: Boolean(result.data.ELECTRIC) });
+    });
+    return () => { active = false; };
+  }, [selectedRoomId]);
+
+  const visible = useMemo(() => items.filter((bill) => !query || `${bill.number} ${bill.room.number} ${bill.contract.resident.fullName}`.toLowerCase().includes(query.toLowerCase())), [items, query]);
+  const amount = (bill: InvoiceDto, ...codes: string[]) => Number(bill.items.find((item) => codes.includes(item.code ?? item.type ?? ""))?.amount ?? 0);
+  const waterUnits = Math.max(0, water.current - water.previous);
+  const electricUnits = Math.max(0, electric.current - electric.previous);
+
+  async function create(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!branchId || !selectedContract) return;
+    if (water.current < water.previous || electric.current < electric.previous) { setError("เลขมิเตอร์เดือนนี้ต้องไม่น้อยกว่าเลขครั้งก่อน"); return; }
+    setBusy(true); setError(null);
+    const form = new FormData(event.currentTarget);
+    const year = Number(form.get("year"));
+    const month = Number(form.get("month"));
+    const dueDate = String(form.get("dueDate"));
+    const readingDate = new Date(`${String(form.get("readingDate"))}T12:00:00`).toISOString();
+    const rent = Number(form.get("rent"));
+    const period = await apiMutation<Period>(`/branches/${branchId}/billing-periods`, { year, month, dueDate });
+    if (!period.ok) { setBusy(false); setError(period.message); return; }
+    const lineItems = [
+      { code: "RENT", description: "ค่าเช่า", quantity: 1, unitPrice: rent },
+      ...(waterUnits > 0 ? [{ code: "WATER", description: "ค่าน้ำ", quantity: waterUnits, unitPrice: water.rate, metadata: { previousValue: water.previous, currentValue: water.current } }] : []),
+      ...(electricUnits > 0 ? [{ code: "ELECTRIC", description: "ค่าไฟ", quantity: electricUnits, unitPrice: electric.rate, metadata: { previousValue: electric.previous, currentValue: electric.current } }] : []),
+    ];
+    const meterReadings = [
+      { type: "WATER", readingDate, previousValue: water.previous, currentValue: water.current, unitRate: water.rate },
+      { type: "ELECTRIC", readingDate, previousValue: electric.previous, currentValue: electric.current, unitRate: electric.rate },
+    ];
+    const result = await apiMutation<InvoiceDto>("/invoices", { branchId, periodId: period.data.id, contractId, number: `INV-${year}${String(month).padStart(2, "0")}-${selectedContract.room.number}-${Date.now().toString().slice(-5)}`, discount: 0, items: lineItems, meterReadings });
+    setBusy(false);
+    if (!result.ok) { setError(result.message); return; }
+    const mappedItems = lineItems.map((item) => ({ ...item, amount: item.quantity * item.unitPrice }));
+    setItems((current) => [{ ...result.data, status: "DRAFT", room: { number: selectedContract.room.number }, contract: { resident: { fullName: selectedContract.resident.fullName } }, items: mappedItems }, ...current]);
+    setOpen(false); setContractId("");
+  }
+
+  async function issue(invoiceId: string) {
+    setIssuingId(invoiceId); setError(null);
+    const result = await apiMutation<{ invoice: InvoiceDto }>(`/invoices/${invoiceId}/issue`, {});
+    setIssuingId(null);
+    if (!result.ok) { setError(result.message); return; }
+    setItems((current) => current.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "ISSUED" } : invoice));
+  }
+
+  return <>
+    <PageHead eyebrow="การเงิน" title="ใบแจ้งหนี้" subtitle="อ่านมิเตอร์ คำนวณค่าน้ำค่าไฟ และออกบิลแจ้งผู้เช่าทาง LINE" />
+    <div className="page-head-actions"><button className="button" onClick={() => { setError(null); setOpen(true); }}>＋ สร้างใบแจ้งหนี้</button></div>
+    <ApiNotice loading={branchesLoading || invoices.loading || contracts.loading} error={invoices.error || contracts.error || error} />
+    {open && <div className="modal-backdrop"><section className="modal bill-modal"><div className="modal-head"><div><h2>สร้างใบแจ้งหนี้รายเดือน</h2><p className="subtitle">เลขครั้งก่อนดึงจากประวัติมิเตอร์ล่าสุดของห้อง</p></div><button className="icon-button" onClick={() => setOpen(false)}>×</button></div>
+      <form onSubmit={create}>
+        <label className="field"><span>สัญญา / ห้อง</span><select value={contractId} onChange={(event) => setContractId(event.target.value)} required><option value="">เลือกห้อง</option>{activeContracts.map((contract) => <option key={contract.id} value={contract.id}>{contract.room.number} · {contract.resident.fullName}</option>)}</select></label>
+        <div className="form-row"><label className="field"><span>ปี</span><input name="year" type="number" defaultValue={new Date().getFullYear()} required /></label><label className="field"><span>เดือน</span><input name="month" type="number" min="1" max="12" defaultValue={new Date().getMonth() + 1} required /></label></div>
+        <div className="form-row"><label className="field"><span>วันที่จดมิเตอร์</span><input name="readingDate" type="date" defaultValue={today()} required /></label><label className="field"><span>วันครบกำหนด</span><input name="dueDate" type="date" required /></label></div>
+        <label className="field"><span>ค่าเช่า</span><input name="rent" type="number" min="0" step="0.01" value={selectedContract ? Number(selectedContract.monthlyRent) : 0} readOnly /></label>
+        <div className="meter-entry-grid">
+          <MeterEntry title="มิเตอร์น้ำ" loading={meterLoading} value={water} onChange={setWater} units={waterUnits} />
+          <MeterEntry title="มิเตอร์ไฟ" loading={meterLoading} value={electric} onChange={setElectric} units={electricUnits} />
+        </div>
+        <div className="bill-preview"><span>ค่าน้ำ ฿{(waterUnits * water.rate).toLocaleString()}</span><span>ค่าไฟ ฿{(electricUnits * electric.rate).toLocaleString()}</span><strong>รวม ฿{(Number(selectedContract?.monthlyRent ?? 0) + waterUnits * water.rate + electricUnits * electric.rate).toLocaleString()}</strong></div>
+        <div className="modal-actions"><button type="button" className="button ghost" onClick={() => setOpen(false)}>ยกเลิก</button><button className="button" disabled={busy || meterLoading || !selectedContract}>{busy ? "กำลังบันทึก…" : "บันทึกแบบร่าง"}</button></div>
+      </form>
+    </section></div>}
+    <div className="toolbar"><input className="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาเลขบิล ห้อง หรือผู้เช่า" /></div>
+    <div className="table-wrap"><table className="data-table"><thead><tr><th>เลขที่</th><th>ห้อง / ผู้เช่า</th><th>ค่าเช่า</th><th>น้ำ</th><th>ไฟ</th><th>ยอดรวม</th><th>สถานะ</th><th>ดำเนินการ</th></tr></thead><tbody>{visible.map((bill) => <tr key={bill.id}><td className="mono">{bill.number}</td><td><strong>{bill.room.number}</strong><br /><small>{bill.contract.resident.fullName}</small></td><td>฿{amount(bill, "RENT").toLocaleString()}</td><td>฿{amount(bill, "WATER").toLocaleString()}</td><td>฿{amount(bill, "ELECTRIC", "ELECTRICITY").toLocaleString()}</td><td><strong>฿{Number(bill.total).toLocaleString()}</strong></td><td><Status>{statuses[bill.status] ?? bill.status}</Status></td><td>{bill.status === "DRAFT" ? <button className="room-invite-button" disabled={issuingId === bill.id} onClick={() => void issue(bill.id)}>{issuingId === bill.id ? "กำลังส่ง…" : "ออกบิล + แจ้ง LINE"}</button> : <span className="table-muted">—</span>}</td></tr>)}</tbody></table>{!visible.length && !invoices.loading && <p className="empty-state">ยังไม่มีใบแจ้งหนี้</p>}</div>
+  </>;
+}
+
+function MeterEntry({ title, loading, value, units, onChange }: { title: string; loading: boolean; value: MeterForm; units: number; onChange: (value: MeterForm) => void }) {
+  return <fieldset className="meter-entry"><legend>{title}</legend><label><span>ครั้งก่อน</span><input type="number" min="0" step="0.001" value={value.previous} readOnly={value.hasHistory} disabled={loading} onChange={(event) => onChange({ ...value, previous: Number(event.target.value) })} /></label><label><span>ครั้งนี้</span><input type="number" min={value.previous} step="0.001" value={value.current} disabled={loading} onChange={(event) => onChange({ ...value, current: Number(event.target.value) })} /></label><label><span>บาท / หน่วย</span><input type="number" min="0" step="0.01" value={value.rate} disabled={loading} onChange={(event) => onChange({ ...value, rate: Number(event.target.value) })} /></label><div><span>{value.hasHistory ? "ใช้ไป" : "ครั้งแรก · ตั้งเลขเริ่มต้นได้"}</span><strong>{units.toLocaleString()} หน่วย</strong></div></fieldset>;
+}
