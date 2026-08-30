@@ -1,0 +1,1 @@
+export function Status({children}:{children:string}) { const cls=children.includes("ชำระแล้ว")||children.includes("อนุมัติ")?"paid":children.includes("เกิน")||children.includes("ปฏิเสธ")?"overdue":children.includes("รอ")?"pending":""; return <span className={`status ${cls}`}>{children}</span>; }

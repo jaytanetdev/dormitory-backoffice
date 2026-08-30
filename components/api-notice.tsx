@@ -1,0 +1,1 @@
+export function ApiNotice({loading,error}:{loading:boolean;error:string|null}){if(loading)return <div className="api-state loading" role="status">กำลังโหลดข้อมูลจากระบบ…</div>;if(error)return <div className="api-state" role="alert">{error}</div>;return null}
