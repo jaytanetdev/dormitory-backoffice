@@ -1,4 +1,4 @@
-export interface BranchLineIntegrationDto { id?:string; displayName?:string; loginChannelId?:string; liffId?:string; isActive?:boolean; updatedAt?:string }
+export interface BranchLineIntegrationDto { id?:string; displayName?:string; loginChannelId?:string; liffId?:string; miniAppChannelId?:string; messagingChannelId?:string; isActive?:boolean; updatedAt?:string }
 export interface BranchDto { id:string; name:string; code:string; claimCode?:string; address?:string|null; phone?:string|null; claimUrl?:string|null; residentClaimUrl?:string|null; lineIntegration?:BranchLineIntegrationDto|null }
 export interface RoleDto { id:string; name:string; description?:string|null; isSystem?:boolean; permissions:{permission:{key:string}}[]; _count?:{users:number} }
 export interface PermissionGroupDto { module:string; actions:{key:string;action:string;description:string|null}[] }
