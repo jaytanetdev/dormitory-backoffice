@@ -9,7 +9,7 @@ import { apiGet, apiMutation } from "@/lib/api";
 import type { InvoiceDto } from "@/lib/api-types";
 import { useApiQuery } from "@/lib/use-api";
 
-type Contract = { id: string; status: string; monthlyRent: number | string; room: { id: string; number: string }; resident: { fullName: string } };
+type Contract = { id: string; status: string; startDate: string; monthlyRent: number | string; room: { id: string; number: string }; resident: { fullName: string } };
 type Period = { id: string; year: number; month: number; dueDate: string };
 type Reading = { id: string; currentValue: number | string; unitRate: number | string; readingDate: string };
 type LatestReadings = { WATER: Reading | null; ELECTRIC: Reading | null };
@@ -24,6 +24,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 export default function BillsPage() {
   const { selectedBranchId: branchId, loading: branchesLoading } = useBranch();
   const invoices = useApiQuery(branchId ? `/branches/${branchId}/invoices` : null, noInvoices);
+  const invoiceSettings = useApiQuery<{ invoiceDueDays?: number } | null>(branchId ? `/branches/${branchId}/promptpay` : null, null);
   const contracts = useApiQuery(branchId ? `/branches/${branchId}/contracts` : null, noContracts);
   const [items, setItems] = useState<InvoiceDto[]>([]);
   const [query, setQuery] = useState("");
@@ -69,6 +70,7 @@ export default function BillsPage() {
   const amount = (bill: InvoiceDto, ...codes: string[]) => Number(bill.items.find((item) => codes.includes(item.code ?? item.type ?? ""))?.amount ?? 0);
   const waterUnits = Math.max(0, water.current - water.previous);
   const electricUnits = Math.max(0, electric.current - electric.previous);
+  const defaultDueDate = selectedContract ? (() => { const date = new Date(selectedContract.startDate); date.setDate(date.getDate() + (invoiceSettings.data?.invoiceDueDays ?? 5)); return date.toISOString().slice(0, 10); })() : "";
 
   async function create(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,7 +80,7 @@ export default function BillsPage() {
     const form = new FormData(event.currentTarget);
     const year = billingYear;
     const month = billingMonth;
-    const dueDate = String(form.get("dueDate"));
+    const dueDate = defaultDueDate || String(form.get("dueDate"));
     const readingDate = new Date(`${String(form.get("readingDate"))}T12:00:00`).toISOString();
     const rent = Number(form.get("rent"));
     const period = await apiMutation<Period>(`/branches/${branchId}/billing-periods`, { year, month, dueDate });
@@ -117,10 +119,11 @@ export default function BillsPage() {
     <section className="billing-overview"><div><span className="eyebrow">รอบบิลที่กำลังทำ</span><h2>{new Intl.DateTimeFormat("th-TH", { month: "long", year: "numeric" }).format(new Date(billingYear, billingMonth - 1, 1))}</h2><p>เช็กห้องที่ทำแล้วก่อนเริ่มออกบิลรอบนี้</p></div><div className="billing-period-fields"><label>เดือน<select value={billingMonth} onChange={(event) => setBillingMonth(Number(event.target.value))}>{Array.from({ length: 12 }, (_, index) => <option key={index + 1} value={index + 1}>{new Intl.DateTimeFormat("th-TH", { month: "long" }).format(new Date(2026, index, 1))}</option>)}</select></label><label>ปี<input type="number" value={billingYear} onChange={(event) => setBillingYear(Number(event.target.value))} /></label></div><div className="billing-progress"><strong>{monthBills.length} <small>/ {activeContracts.length}</small></strong><span>ห้องที่ออกบิลแล้ว</span><div><i style={{ width: `${activeContracts.length ? Math.min(100, monthBills.length / activeContracts.length * 100) : 0}%` }} /></div><em>{missingContracts.length ? `เหลืออีก ${missingContracts.length} ห้อง` : "ครบทุกห้องแล้ว"}</em></div></section>
     {open && <div className="modal-backdrop"><section className="modal bill-modal"><div className="modal-head"><div><h2>สร้างใบแจ้งหนี้รายเดือน</h2><p className="subtitle">เลขครั้งก่อนดึงจากประวัติมิเตอร์ล่าสุดของห้อง</p></div><button className="icon-button" onClick={() => setOpen(false)}>×</button></div>
       <form onSubmit={create}>
+        <p className="auto-due-date">วันครบกำหนดจะคำนวณอัตโนมัติจากวันเข้าพัก + {invoiceSettings.data?.invoiceDueDays ?? 5} วัน{defaultDueDate ? ` · ${new Date(`${defaultDueDate}T12:00:00`).toLocaleDateString("th-TH")}` : ""}</p>
         <div className="modal-period-note"><span>รอบบิล</span><strong>{new Intl.DateTimeFormat("th-TH", { month: "long", year: "numeric" }).format(new Date(billingYear, billingMonth - 1, 1))}</strong><small>{missingContracts.length ? `เลือกได้เฉพาะ ${missingContracts.length} ห้องที่ยังไม่มีบิล` : "รอบนี้ออกครบทุกห้องแล้ว"}</small></div>
         <label className="field"><span>สัญญา / ห้อง</span><select value={contractId} onChange={(event) => setContractId(event.target.value)} required><option value="">เลือกห้องที่ยังไม่ออกบิล</option>{missingContracts.map((contract) => <option key={contract.id} value={contract.id}>{contract.room.number} · {contract.resident.fullName}</option>)}</select></label>
         <input name="year" type="hidden" value={billingYear} readOnly /><input name="month" type="hidden" value={billingMonth} readOnly />
-        <div className="form-row"><label className="field"><span>วันที่จดมิเตอร์</span><input name="readingDate" type="date" defaultValue={today()} required /></label><label className="field"><span>วันครบกำหนด</span><input name="dueDate" type="date" required /></label></div>
+        <div className="form-row"><label className="field"><span>วันที่จดมิเตอร์</span><input name="readingDate" type="date" defaultValue={today()} required /></label><label className="field"><span>วันครบกำหนด</span><input name="dueDate" type="date" key={contractId} defaultValue={defaultDueDate} required /><p className="help">คำนวณจากวันเข้าพัก + {invoiceSettings.data?.invoiceDueDays ?? 5} วัน (แก้ไขได้)</p></label></div>
         <label className="field"><span>ค่าเช่า</span><input name="rent" type="number" min="0" step="0.01" value={selectedContract ? Number(selectedContract.monthlyRent) : 0} readOnly /></label>
         <div className="meter-entry-grid">
           <MeterEntry title="มิเตอร์น้ำ" loading={meterLoading} value={water} onChange={setWater} units={waterUnits} />

@@ -7,6 +7,7 @@ import { useBranch } from "@/components/branch-context";
 import { PageHead } from "@/components/page-head";
 import { apiMutation } from "@/lib/api";
 import { useApiQuery } from "@/lib/use-api";
+import { useForm } from "react-hook-form";
 
 type PromptPayType = "PHONE" | "TAX_ID" | "NATIONAL_ID" | "EWALLET";
 type PromptPaySetting = {
@@ -16,6 +17,7 @@ type PromptPaySetting = {
   target: string;
   accountName: string;
   enabled: boolean;
+  invoiceDueDays?: number;
   previewAmount: number;
   qrDataUrl: string;
 };
@@ -30,6 +32,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dueDaysForm = useForm<{ invoiceDueDays: number }>({ defaultValues: { invoiceDueDays: 5 } });
 
   useEffect(() => {
     const value = setting.data;
@@ -37,9 +40,10 @@ export default function Settings() {
     setTarget(value?.target ?? "");
     setAccountName(value?.accountName ?? "");
     setPreview(value);
+    dueDaysForm.setValue("invoiceDueDays", value?.invoiceDueDays ?? 5);
     setSaved(false);
     setError(null);
-  }, [branchId, setting.data]);
+  }, [branchId, setting.data, dueDaysForm]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,6 +53,7 @@ export default function Settings() {
       type,
       target: target.trim(),
       accountName: accountName.trim(),
+      invoiceDueDays: dueDaysForm.getValues("invoiceDueDays"),
     }, "PUT");
     setSaving(false);
     if (!result.ok) { setError(result.message); return; }
@@ -70,6 +75,8 @@ export default function Settings() {
 
     {!branchId ? <section className="form-panel promptpay-empty"><h2>ยังไม่ได้เลือกสาขา</h2><p>เลือกสาขาจากเมนูด้านบนก่อนตั้งค่าบัญชี PromptPay</p></section> : <div className="settings-grid promptpay-settings">
       <form className="form-panel" onSubmit={submit}>
+        <div className="settings-divider"><span className="eyebrow">ตั้งค่าใบแจ้งหนี้</span><p>ระบบจะนับจากวันเข้าพักของผู้เช่าให้อัตโนมัติ</p></div>
+        <label className="field"><span>กำหนดชำระหลังวันเข้าพัก (วัน)</span><input type="number" min="0" max="31" step="1" {...dueDaysForm.register("invoiceDueDays", { valueAsNumber: true, min: 0, max: 31 })} disabled={saving} /><p className="help">ตัวอย่าง: ตั้ง 5 วัน ใบแจ้งหนี้จะครบกำหนด 5 วันหลังวันเข้าพัก</p></label>
         <div className="promptpay-panel-head"><div><span className="eyebrow">บัญชีรับเงินของสาขา</span><h2>{selectedBranch?.name}</h2></div>{preview?.enabled && <span className="promptpay-active"><i />พร้อมใช้งาน</span>}</div>
 
         <label className="field"><span>ประเภท PromptPay</span><select value={type} onChange={(event) => setType(event.target.value as PromptPayType)} disabled={saving}><option value="PHONE">เบอร์โทรศัพท์</option><option value="TAX_ID">เลขประจำตัวผู้เสียภาษี</option><option value="NATIONAL_ID">เลขบัตรประชาชน</option><option value="EWALLET">e-Wallet</option></select></label>
