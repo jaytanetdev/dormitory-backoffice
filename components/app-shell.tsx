@@ -30,7 +30,7 @@ function ShellContent({ children }: { children: React.ReactNode }) {
   return <div className="app-shell"><InteractionFeedback />
     <aside className={`sidebar ${open?"open":""}`} aria-label="เมนูหลัก">
       <div className="brand"><div className="brand-mark" aria-hidden="true"><i/><i/><i/><i/></div><div><strong>ห้องบัญชี</strong><small>Dormitory Ledger</small></div></div>
-      <nav className="nav">{[...(me.data?.isPlatformAdmin ? [platformGroup] : []), ...groups].map(group=><div key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item=><Link key={item.href} href={item.href} className={path.startsWith(item.href)?"active":""} onClick={()=>{setOpen(false);if(!path.startsWith(item.href))setNavigating(true)}}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</div>)}</nav>
+      <nav className="nav">{[...(me.data?.isPlatformAdmin ? [platformGroup] : []), ...groups].map(group=><div key={group.label}><div className="nav-label">{group.label}</div>{group.items.filter(item=>item.href !== "/roles" || me.data?.isPlatformAdmin).map(item=><Link key={item.href} href={item.href} className={path.startsWith(item.href)?"active":""} onClick={()=>{setOpen(false);if(!path.startsWith(item.href))setNavigating(true)}}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</div>)}</nav>
       <div className="sidebar-foot"><div className="avatar">สท</div><div><strong>สมชาย ทองดี</strong><button onClick={()=>{clearSession();router.replace("/login")}} style={{border:0,background:"none",padding:0,color:"#8290a9",fontSize:11,cursor:"pointer"}}>ออกจากระบบ</button></div></div>
     </aside>
     <main className="main">
