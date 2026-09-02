@@ -13,6 +13,7 @@
   --sidebar: #11192a;
   --radius: 8px;
 }
+.receipt-card{width:min(480px,calc(100vw - 28px));background:#fff;border-radius:18px;box-shadow:0 24px 70px #07132640;overflow:hidden}.receipt-head{display:flex;justify-content:space-between;align-items:flex-start;padding:22px 24px 12px}.receipt-paper{margin:0 24px 20px;padding:24px;background:#fffdf7;border:1px dashed #c9c2b7;border-radius:12px;color:#233047}.receipt-paper p{color:#6d7685;margin:8px 0 20px}.receipt-paper hr{border:0;border-top:1px solid #e8e3d9;margin:0 0 16px}.receipt-paper>div{display:flex;justify-content:space-between;gap:18px;padding:7px 0}.receipt-total{border-top:2px solid #233047;margin-top:10px;padding-top:14px!important;font-size:18px}.receipt-total b{color:#0b8f70}.receipt-card .slip-modal-foot{padding:0 24px 22px}
 * { box-sizing: border-box; }
 html { background: var(--paper); }
 body { margin: 0; color: var(--ink); background: var(--paper); font-family: "Leelawadee UI", "Noto Sans Thai", Tahoma, system-ui, sans-serif; }

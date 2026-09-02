@@ -18,6 +18,7 @@ type PromptPaySetting = {
   accountName: string;
   enabled: boolean;
   invoiceDueDays?: number;
+  lateFeePerDay?: number;
   previewAmount: number;
   qrDataUrl: string;
 };
@@ -32,7 +33,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const dueDaysForm = useForm<{ invoiceDueDays: number }>({ defaultValues: { invoiceDueDays: 5 } });
+  const dueDaysForm = useForm<{ invoiceDueDays: number; lateFeePerDay: number }>({ defaultValues: { invoiceDueDays: 5, lateFeePerDay: 0 } });
 
   useEffect(() => {
     const value = setting.data;
@@ -41,6 +42,7 @@ export default function Settings() {
     setAccountName(value?.accountName ?? "");
     setPreview(value);
     dueDaysForm.setValue("invoiceDueDays", value?.invoiceDueDays ?? 5);
+    dueDaysForm.setValue("lateFeePerDay", value?.lateFeePerDay ?? 0);
     setSaved(false);
     setError(null);
   }, [branchId, setting.data, dueDaysForm]);
@@ -54,6 +56,7 @@ export default function Settings() {
       target: target.trim(),
       accountName: accountName.trim(),
       invoiceDueDays: dueDaysForm.getValues("invoiceDueDays"),
+      lateFeePerDay: dueDaysForm.getValues("lateFeePerDay"),
     }, "PUT");
     setSaving(false);
     if (!result.ok) { setError(result.message); return; }
@@ -77,6 +80,7 @@ export default function Settings() {
       <form className="form-panel" onSubmit={submit}>
         <div className="settings-divider"><span className="eyebrow">ตั้งค่าใบแจ้งหนี้</span><p>ระบบจะนับจากวันเข้าพักของผู้เช่าให้อัตโนมัติ</p></div>
         <label className="field"><span>กำหนดชำระหลังวันเข้าพัก (วัน)</span><input type="number" min="0" max="31" step="1" {...dueDaysForm.register("invoiceDueDays", { valueAsNumber: true, min: 0, max: 31 })} disabled={saving} /><p className="help">ตัวอย่าง: ตั้ง 5 วัน ใบแจ้งหนี้จะครบกำหนด 5 วันหลังวันเข้าพัก</p></label>
+        <label className="field"><span>ค่าปรับชำระล่าช้า (บาท/วัน)</span><input type="number" min="0" max="10000" step="1" {...dueDaysForm.register("lateFeePerDay", { valueAsNumber: true, min: 0, max: 10000 })} disabled={saving} /><p className="help">ระบบจะคิดจากวันที่ชำระจริง ลบด้วยวันครบกำหนด</p></label>
         <div className="promptpay-panel-head"><div><span className="eyebrow">บัญชีรับเงินของสาขา</span><h2>{selectedBranch?.name}</h2></div>{preview?.enabled && <span className="promptpay-active"><i />พร้อมใช้งาน</span>}</div>
 
         <label className="field"><span>ประเภท PromptPay</span><select value={type} onChange={(event) => setType(event.target.value as PromptPayType)} disabled={saving}><option value="PHONE">เบอร์โทรศัพท์</option><option value="TAX_ID">เลขประจำตัวผู้เสียภาษี</option><option value="NATIONAL_ID">เลขบัตรประชาชน</option><option value="EWALLET">e-Wallet</option></select></label>

@@ -11,7 +11,7 @@ import { BranchProvider, useBranch } from "./branch-context";
 const groups = [
   { label:"ภาพรวม", items:[{href:"/dashboard",label:"แดชบอร์ด",icon:"dashboard"}] },
   { label:"จัดการหอพัก", items:[{href:"/stores",label:"ร้านและสาขา",icon:"building"},{href:"/rooms",label:"ห้องพัก",icon:"room"},{href:"/residents",label:"ผู้เช่า",icon:"people"}] },
-  { label:"การเงิน", items:[{href:"/bills",label:"ใบแจ้งหนี้",icon:"bill"},{href:"/calendar",label:"ปฏิทินกำหนดชำระ",icon:"bill"},{href:"/payments",label:"ตรวจสอบการชำระ",icon:"payment"}] },
+  { label:"การเงิน", items:[{href:"/bills",label:"ใบแจ้งหนี้",icon:"bill"},{href:"/calendar",label:"ปฏิทินกำหนดชำระ",icon:"bill"},{href:"/payments",label:"ตรวจสอบการชำระ",icon:"payment"},{href:"/reports",label:"รายงาน CSV",icon:"bill"}] },
   { label:"ระบบ", items:[{href:"/users",label:"ผู้ใช้งาน",icon:"people"},{href:"/roles",label:"บทบาทและสิทธิ์",icon:"roles"},{href:"/settings",label:"ตั้งค่า PromptPay",icon:"settings"}] },
 ];
 export function AppShell({ children }: { children: React.ReactNode }) {
