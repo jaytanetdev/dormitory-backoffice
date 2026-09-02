@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { InteractionFeedback } from "./interaction-feedback";
 import { BranchProvider, useBranch } from "./branch-context";
 import { useApiQuery } from "@/lib/use-api";
+import { Select } from "./ui/select";
 
 const groups = [
   { label:"ภาพรวม", items:[{href:"/dashboard",label:"แดชบอร์ด",icon:"dashboard"}] },
@@ -33,7 +34,7 @@ function ShellContent({ children }: { children: React.ReactNode }) {
       <div className="sidebar-foot"><div className="avatar">สท</div><div><strong>สมชาย ทองดี</strong><button onClick={()=>{clearSession();router.replace("/login")}} style={{border:0,background:"none",padding:0,color:"#8290a9",fontSize:11,cursor:"pointer"}}>ออกจากระบบ</button></div></div>
     </aside>
     <main className="main">
-      <header className="topbar"><button className="icon-button mobile-menu" onClick={()=>setOpen(v=>!v)} aria-label="เปิดเมนู">☰</button><div className="crumb">ห้องบัญชี&nbsp; / &nbsp;<strong>{current}</strong></div><div className="top-actions"><select className="branch-select" aria-label="เลือกสาขา" value={selectedBranchId ?? ""} disabled={branchesLoading || !branches.length} onChange={(event)=>selectBranch(event.target.value || null)}>{!branches.length && <option value="">{branchesLoading ? "กำลังโหลดสาขา…" : "ยังไม่มีสาขา"}</option>}{branches.map((branch)=><option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></div></header>
+      <header className="topbar"><button className="icon-button mobile-menu" onClick={()=>setOpen(v=>!v)} aria-label="เปิดเมนู">☰</button><div className="crumb">ห้องบัญชี&nbsp; / &nbsp;<strong>{current}</strong></div><div className="top-actions"><Select className="branch-select" placeholder={branchesLoading ? "กำลังโหลดสาขา…" : "เลือกสาขา"} value={selectedBranchId ?? undefined} disabled={branchesLoading || !branches.length} onValueChange={(value)=>selectBranch(value || null)} options={branches.map((branch)=>({ value:branch.id, label:branch.name }))} /></div></header>
       <div className="content">{navigating ? <RouteSkeleton /> : children}</div>
     </main>
   </div>;
