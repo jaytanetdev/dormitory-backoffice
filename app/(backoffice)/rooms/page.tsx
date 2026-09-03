@@ -5,6 +5,7 @@ import { ApiNotice } from "@/components/api-notice";
 import { useBranch } from "@/components/branch-context";
 import { PageHead } from "@/components/page-head";
 import { Status } from "@/components/status";
+import { Select } from "@/components/ui/select";
 import { apiMutation } from "@/lib/api";
 import type { ApiRoom, PropertyDto } from "@/lib/api-types";
 import { useApiQuery } from "@/lib/use-api";
@@ -101,7 +102,7 @@ export default function Rooms() {
 
     {invite && <div className="modal-backdrop" onMouseDown={() => setInvite(null)}><section className="modal room-invite-modal" onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">ลิงก์เชิญผู้เช่า</div><h2>ห้อง {invite.roomNumber}</h2></div><button type="button" className="icon-button" onClick={() => setInvite(null)}>×</button></div><div className="room-invite-success"><span>✓</span><strong>สร้างลิงก์เฉพาะห้องแล้ว</strong><p>ใช้ได้ถึง {new Date(invite.expiresAt).toLocaleString("th-TH")} และยืนยันได้ครั้งเดียว</p></div><div className="room-invite-link"><code>{invite.claimUrl}</code><button type="button" className="button" onClick={() => void copyInvite()}>{copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}</button></div><p className="security-note">ส่งลิงก์นี้ให้ผู้เช่าห้อง {invite.roomNumber} เท่านั้น เมื่อยืนยันสำเร็จระบบจะสร้างผู้เช่าและสัญญาให้อัตโนมัติ</p></section></div>}
 
-    <div className="toolbar"><input className="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาเลขห้อง ชั้น ประเภท หรืออาคาร" /><select className="filter" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">ทุกสถานะ</option><option value="VACANT">ห้องว่าง</option><option value="OCCUPIED">มีผู้เช่า</option><option value="RESERVED">จองแล้ว</option><option value="MAINTENANCE">ซ่อมบำรุง</option></select></div>
+    <div className="toolbar"><input className="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาเลขห้อง ชั้น ประเภท หรืออาคาร" /><Select className="filter" value={status} onValueChange={setStatus} options={[{ value: "", label: "ทุกสถานะ" }, { value: "VACANT", label: "ห้องว่าง" }, { value: "OCCUPIED", label: "มีผู้เช่า" }, { value: "RESERVED", label: "จองแล้ว" }, { value: "MAINTENANCE", label: "ซ่อมบำรุง" }]} /></div>
     <div className="table-wrap"><table className="data-table"><thead><tr><th>ห้อง</th><th>ชั้น</th><th>ประเภท</th><th>อาคาร</th><th>สถานะ</th><th>ค่าเช่า</th><th>ลิงก์ผู้เช่า</th></tr></thead><tbody>{visible.map((room) => <tr key={room.id}><td><strong>{room.number}</strong></td><td>{room.floor || "—"}</td><td>{room.roomType.name}</td><td>{room.building}</td><td><Status>{labels[room.status]}</Status></td><td className="money">฿{Number(room.roomType.baseRent).toLocaleString("th-TH")}</td><td>{room.status === "VACANT" ? <button type="button" className="room-invite-button" disabled={inviteBusyId === room.id} onClick={() => void createInvite(room)}>{inviteBusyId === room.id ? "กำลังสร้าง…" : "สร้างลิงก์"}</button> : <span className="table-muted">—</span>}</td></tr>)}</tbody></table>{!visible.length && !properties.loading && <p className="empty-state">ไม่พบห้องพัก</p>}</div>
   </>;
 }

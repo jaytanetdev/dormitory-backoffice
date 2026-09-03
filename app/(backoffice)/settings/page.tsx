@@ -8,6 +8,7 @@ import { PageHead } from "@/components/page-head";
 import { apiMutation } from "@/lib/api";
 import { useApiQuery } from "@/lib/use-api";
 import { useForm } from "react-hook-form";
+import { Select } from "@/components/ui/select";
 
 type PromptPayType = "PHONE" | "TAX_ID" | "NATIONAL_ID" | "EWALLET";
 type PromptPaySetting = {
@@ -83,7 +84,7 @@ export default function Settings() {
         <label className="field"><span>ค่าปรับชำระล่าช้า (บาท/วัน)</span><input type="number" min="0" max="10000" step="1" {...dueDaysForm.register("lateFeePerDay", { valueAsNumber: true, min: 0, max: 10000 })} disabled={saving} /><p className="help">ระบบจะคิดจากวันที่ชำระจริง ลบด้วยวันครบกำหนด</p></label>
         <div className="promptpay-panel-head"><div><span className="eyebrow">บัญชีรับเงินของสาขา</span><h2>{selectedBranch?.name}</h2></div>{preview?.enabled && <span className="promptpay-active"><i />พร้อมใช้งาน</span>}</div>
 
-        <label className="field"><span>ประเภท PromptPay</span><select value={type} onChange={(event) => setType(event.target.value as PromptPayType)} disabled={saving}><option value="PHONE">เบอร์โทรศัพท์</option><option value="TAX_ID">เลขประจำตัวผู้เสียภาษี</option><option value="NATIONAL_ID">เลขบัตรประชาชน</option><option value="EWALLET">e-Wallet</option></select></label>
+        <label className="field"><span>ประเภท PromptPay</span><Select value={type} onValueChange={(value) => setType(value as PromptPayType)} disabled={saving} options={[{ value: "PHONE", label: "เบอร์โทรศัพท์" }, { value: "TAX_ID", label: "เลขประจำตัวผู้เสียภาษี" }, { value: "NATIONAL_ID", label: "เลขบัตรประชาชน" }, { value: "EWALLET", label: "e-Wallet" }]} /></label>
         <label className="field"><span>หมายเลขที่ผูก PromptPay</span><input value={target} onChange={(event) => setTarget(event.target.value)} inputMode="numeric" placeholder={type === "PHONE" ? "0812345678" : "กรอกหมายเลข PromptPay"} required disabled={saving} /><p className="help">{targetHelp}</p></label>
         <label className="field"><span>ชื่อบัญชีที่แสดงให้ผู้เช่า</span><input value={accountName} onChange={(event) => setAccountName(event.target.value)} placeholder="เช่น หอพักสุขใจ" required disabled={saving} /></label>
 
