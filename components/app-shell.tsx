@@ -11,6 +11,7 @@ import { useApiQuery } from "@/lib/use-api";
 import { Select } from "./ui/select";
 
 const groups = [
+  { label:"การสื่อสาร", items:[{href:"/chat",label:"แชท LINE ลูกบ้าน",icon:"people"}] },
   { label:"ภาพรวม", items:[{href:"/dashboard",label:"แดชบอร์ด",icon:"dashboard"}] },
   { label:"จัดการหอพัก", items:[{href:"/stores",label:"ร้านและสาขา",icon:"building"},{href:"/rooms",label:"ห้องพัก",icon:"room"},{href:"/residents",label:"ผู้เช่า",icon:"people"}] },
   { label:"การเงิน", items:[{href:"/bills",label:"ใบแจ้งหนี้",icon:"bill"},{href:"/calendar",label:"ปฏิทินกำหนดชำระ",icon:"bill"},{href:"/payments",label:"ตรวจสอบการชำระ",icon:"payment"},{href:"/reports",label:"รายงาน CSV",icon:"bill"}] },
