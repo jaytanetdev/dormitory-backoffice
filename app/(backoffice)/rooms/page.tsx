@@ -5,7 +5,7 @@ import { ApiNotice } from "@/components/api-notice";
 import { useBranch } from "@/components/branch-context";
 import { PageHead } from "@/components/page-head";
 import { Status } from "@/components/status";
-import { Select } from "@/components/ui/select";
+import { MultiCheckboxDropdown } from "@/components/ui/multi-checkbox-dropdown";
 import { apiMutation } from "@/lib/api";
 import type { ApiRoom, PropertyDto } from "@/lib/api-types";
 import { useApiQuery } from "@/lib/use-api";
@@ -25,7 +25,7 @@ export default function Rooms() {
   const types = useApiQuery("/room-types", noTypes);
   const [items, setItems] = useState<DisplayRoom[]>([]);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export default function Rooms() {
 
   const visible = useMemo(() => items.filter((room) =>
     (!search || `${room.number} ${room.floor ?? ""} ${room.roomType.name} ${room.building}`.toLowerCase().includes(search.toLowerCase())) &&
-    (!status || room.status === status),
+    (!status.length || status.includes(room.status)),
   ), [items, search, status]);
 
   async function create(event: FormEvent<HTMLFormElement>) {
@@ -102,7 +102,7 @@ export default function Rooms() {
 
     {invite && <div className="modal-backdrop" onMouseDown={() => setInvite(null)}><section className="modal room-invite-modal" onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">ลิงก์เชิญผู้เช่า</div><h2>ห้อง {invite.roomNumber}</h2></div><button type="button" className="icon-button" onClick={() => setInvite(null)}>×</button></div><div className="room-invite-success"><span>✓</span><strong>สร้างลิงก์เฉพาะห้องแล้ว</strong><p>ใช้ได้ถึง {new Date(invite.expiresAt).toLocaleString("th-TH")} และยืนยันได้ครั้งเดียว</p></div><div className="room-invite-link"><code>{invite.claimUrl}</code><button type="button" className="button" onClick={() => void copyInvite()}>{copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}</button></div><p className="security-note">ส่งลิงก์นี้ให้ผู้เช่าห้อง {invite.roomNumber} เท่านั้น เมื่อยืนยันสำเร็จระบบจะสร้างผู้เช่าและสัญญาให้อัตโนมัติ</p></section></div>}
 
-    <div className="toolbar"><input className="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาเลขห้อง ชั้น ประเภท หรืออาคาร" /><Select className="filter" value={status} onValueChange={setStatus} options={[{ value: "", label: "ทุกสถานะ" }, { value: "VACANT", label: "ห้องว่าง" }, { value: "OCCUPIED", label: "มีผู้เช่า" }, { value: "RESERVED", label: "จองแล้ว" }, { value: "MAINTENANCE", label: "ซ่อมบำรุง" }]} /></div>
+    <div className="toolbar"><input className="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาเลขห้อง ชั้น ประเภท หรืออาคาร" /><MultiCheckboxDropdown value={status} onValueChange={setStatus} options={[{ value: "VACANT", label: "ห้องว่าง" }, { value: "OCCUPIED", label: "มีผู้เช่า" }, { value: "RESERVED", label: "จองแล้ว" }, { value: "MAINTENANCE", label: "ซ่อมบำรุง" }]} placeholder="ทุกสถานะ" /></div>
     <div className="table-wrap"><table className="data-table"><thead><tr><th>ห้อง</th><th>ชั้น</th><th>ประเภท</th><th>อาคาร</th><th>สถานะ</th><th>ค่าเช่า</th><th>ลิงก์ผู้เช่า</th></tr></thead><tbody>{visible.map((room) => <tr key={room.id}><td><strong>{room.number}</strong></td><td>{room.floor || "—"}</td><td>{room.roomType.name}</td><td>{room.building}</td><td><Status>{labels[room.status]}</Status></td><td className="money">฿{Number(room.roomType.baseRent).toLocaleString("th-TH")}</td><td>{room.status === "VACANT" ? <button type="button" className="room-invite-button" disabled={inviteBusyId === room.id} onClick={() => void createInvite(room)}>{inviteBusyId === room.id ? "กำลังสร้าง…" : "สร้างลิงก์"}</button> : <span className="table-muted">—</span>}</td></tr>)}</tbody></table>{!visible.length && !properties.loading && <p className="empty-state">ไม่พบห้องพัก</p>}</div>
   </>;
 }

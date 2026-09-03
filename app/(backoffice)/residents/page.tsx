@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ApiNotice } from "@/components/api-notice";
 import { Status } from "@/components/status";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useBranch } from "@/components/branch-context";
 import { apiMutation } from "@/lib/api";
 import type { ResidentDto } from "@/lib/api-types";
@@ -52,7 +53,7 @@ export default function ResidentsPage() {
     })}</tbody></table>{!visible.length && !residents.loading && <p className="empty-state">ยังไม่มีผู้เช่าในสาขานี้</p>}</div>
     {moveOut && <div className="modal-backdrop"><section className="modal"><div className="modal-head"><div><p className="eyebrow">ปิดสัญญาเช่า</p><h2>ยืนยันผู้เช่าย้ายออก</h2></div><button className="icon-button" onClick={() => setMoveOut(null)}>×</button></div>
       <div className="move-out-summary"><span>ผู้เช่า</span><strong>{moveOut.residentName}</strong><span>ห้อง</span><strong>{moveOut.roomNumber}</strong></div>
-      <label className="field"><span>วันที่ย้ายออก</span><input type="date" value={moveOutDate} onChange={(event) => setMoveOutDate(event.target.value)} required /></label>
+      <label className="field"><span>วันที่ย้ายออก</span><DatePicker value={moveOutDate} onValueChange={setMoveOutDate} required /></label>
       <div className="move-out-warning"><strong>ก่อนปิดสัญญา</strong><p>ควรสร้างบิลรอบสุดท้ายและกรอกเลขมิเตอร์น้ำ–ไฟครั้งล่าสุดให้เรียบร้อย เมื่อยืนยันแล้วห้องจะเปลี่ยนเป็น “ว่าง” ทันที</p><Link href="/bills">ไปหน้าออกบิลรอบสุดท้าย</Link></div>
       <div className="modal-actions"><button className="button ghost" onClick={() => setMoveOut(null)}>ยกเลิก</button><button className="button danger" disabled={busy || !moveOutDate} onClick={() => void confirmMoveOut()}>{busy ? "กำลังปิดสัญญา…" : "ยืนยันย้ายออก"}</button></div>
     </section></div>}
