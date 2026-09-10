@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./chat.css";
 import "./quota.css";
+import "./theme.css";
 import { QueryProvider } from "@/components/query-provider";
 
 export const metadata: Metadata = { title: "ห้องบัญชี — ระบบจัดการหอพัก", description: "Backoffice สำหรับร้าน สาขา ห้อง บิล และผู้เช่า" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="th"><body><QueryProvider>{children}</QueryProvider></body></html>;
+  return <html lang="th" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('dormitory-theme');document.documentElement.dataset.theme=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}})()` }} /></head><body><QueryProvider>{children}</QueryProvider></body></html>;
 }

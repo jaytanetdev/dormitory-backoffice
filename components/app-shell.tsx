@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { ThemeToggle } from "./theme-toggle";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +16,7 @@ const groups = [
   { label:"การสื่อสาร", items:[{href:"/chat",label:"แชท LINE ลูกบ้าน",icon:"people"}] },
   { label:"ภาพรวม", items:[{href:"/dashboard",label:"แดชบอร์ด",icon:"dashboard"}] },
   { label:"จัดการหอพัก", items:[{href:"/stores",label:"ร้านและสาขา",icon:"building"},{href:"/rooms",label:"ห้องพัก",icon:"room"},{href:"/residents",label:"ผู้เช่า",icon:"people"}] },
-  { label:"การเงิน", items:[{href:"/bills",label:"ใบแจ้งหนี้",icon:"bill"},{href:"/calendar",label:"ปฏิทินกำหนดชำระ",icon:"bill"},{href:"/payments",label:"ตรวจสอบการชำระ",icon:"payment"},{href:"/reports",label:"รายงาน CSV",icon:"bill"}] },
+  { label:"การเงิน", items:[{href:"/bills",label:"ใบแจ้งหนี้",icon:"bill"},{href:"/calendar",label:"ปฏิทินกำหนดชำระ",icon:"bill"},{href:"/payments",label:"ตรวจสอบการชำระ",icon:"payment"},{href:"/reports",label:"รายงาน",icon:"bill"}] },
   { label:"ระบบ", items:[{href:"/users",label:"ผู้ใช้งาน",icon:"people"},{href:"/roles",label:"บทบาทและสิทธิ์",icon:"roles"},{href:"/settings",label:"ตั้งค่า PromptPay",icon:"settings"}] },
 ];
 const platformGroup = { label:"Platform", items:[{href:"/platform/stores",label:"จัดการร้านค้า",icon:"building"}] };
@@ -56,7 +57,7 @@ function ShellContent({ children }: { children: React.ReactNode }) {
       <LineQuotaSidebar quota={lineQuota.data} loading={lineQuota.isPending} />
     </aside>
     <main className="main">
-      <header className="topbar"><button className="icon-button mobile-menu" onClick={()=>setOpen(v=>!v)} aria-label="เปิดเมนู">☰</button><div className="crumb">ห้องบัญชี&nbsp; / &nbsp;<strong>{current}</strong></div><div className="top-actions"><Select className="branch-select" placeholder={branchesLoading ? "กำลังโหลดสาขา…" : "เลือกสาขา"} value={selectedBranchId ?? undefined} disabled={branchesLoading || !branches.length} onValueChange={(value)=>selectBranch(value || null)} options={branches.map((branch)=>({ value:branch.id, label:branch.name }))} /></div></header>
+      <header className="topbar"><button className="icon-button mobile-menu" onClick={()=>setOpen(v=>!v)} aria-label="เปิดเมนู">☰</button><div className="crumb">ห้องบัญชี&nbsp; / &nbsp;<strong>{current}</strong></div><div className="top-actions"><ThemeToggle /><Select className="branch-select" placeholder={branchesLoading ? "กำลังโหลดสาขา…" : "เลือกสาขา"} value={selectedBranchId ?? undefined} disabled={branchesLoading || !branches.length} onValueChange={(value)=>selectBranch(value || null)} options={branches.map((branch)=>({ value:branch.id, label:branch.name }))} /></div></header>
       <div className="content">{navigating ? <RouteSkeleton /> : children}</div>
     </main>
   </div>;
