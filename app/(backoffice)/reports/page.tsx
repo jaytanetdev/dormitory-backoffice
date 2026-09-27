@@ -136,6 +136,15 @@ export default function ReportsPage() {
               </label>
             </div>
             <div className="report-export">
+              <span id="report-export-help">
+                {loading
+                  ? "กำลังเตรียมข้อมูล…"
+                  : query.error
+                    ? "โหลดข้อมูลไม่สำเร็จ"
+                    : rows.length
+                      ? rows.length.toLocaleString() + " รายการพร้อมส่งออก"
+                      : "ยังไม่มีรายการให้ดาวน์โหลด"}
+              </span>
               <button
                 className="button report-download"
                 type="button"
@@ -154,15 +163,6 @@ export default function ReportsPage() {
                 </svg>
                 ดาวน์โหลด CSV
               </button>
-              <span id="report-export-help">
-                {loading
-                  ? "กำลังเตรียมข้อมูล…"
-                  : query.error
-                    ? "โหลดข้อมูลไม่สำเร็จ"
-                    : rows.length
-                      ? rows.length.toLocaleString() + " รายการพร้อมส่งออก"
-                      : "ยังไม่มีรายการให้ดาวน์โหลด"}
-              </span>
             </div>
           </section>
           <section className="report-summary" aria-label="สรุปรายงาน">
