@@ -41,3 +41,7 @@ A later screenshot exposed a CSS cascade bug: primary action text color also app
 ## Follow-up: reports layout
 
 Consolidated year/month filters and export into one compact toolbar; grouped summary totals and aligned the invoice ledger with other pages. Mobile totals stack with clear labels. Replaced legacy purple export hover/focus colors with theme tokens and preserved disabled styling. B15 checks both themes for page overflow and captures screenshots; B28 verifies CSV output on desktop/mobile. Production build passed.
+
+## Follow-up: floating date picker
+
+The shared date picker now renders a fixed portal under document.body, outside scrollable modal clipping. It chooses space above/below the trigger and stays within viewport bounds on scroll, resize and month changes. Outside pointer/Escape dismiss it; selection and Escape restore trigger focus. B40 checks portal placement, complete calendar visibility without additional modal scrolling, selection, Escape and outside click at a 600px viewport height on desktop/mobile. B17/B24 regression workflows also passed (6 tests total). Production build passed.

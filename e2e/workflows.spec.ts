@@ -588,3 +588,35 @@ test("B39 modal dismiss button has readable contrast in both themes", async ({ p
     await expect(page.getByRole("dialog")).toHaveCount(0);
   }
 });
+
+test("B40 date picker floats outside scrollable modal", async ({ page }, info) => {
+  await page.setViewportSize({ width: page.viewportSize()!.width, height: 600 });
+  await page.goto("/residents");
+  await page.getByRole("button", { name: "ย้ายออก", exact: true }).first().click();
+  const modal = page.getByRole("dialog", { name: "ยืนยันผู้เช่าย้ายออก" });
+  const trigger = modal.locator(".date-picker-trigger");
+  await trigger.scrollIntoViewIfNeeded();
+  const before = await modal.evaluate(element => element.scrollTop);
+  await trigger.click();
+  const calendar = page.getByRole("dialog", { name: "เลือกวันที่", exact: true });
+  await expect(calendar).toBeVisible();
+  expect(await calendar.evaluate(element => element.parentElement === document.body)).toBe(true);
+  const box = await calendar.boundingBox();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(600);
+  expect(await modal.evaluate(element => element.scrollTop)).toBe(before);
+  await expect(calendar.getByRole("button", { name: "28", exact: true })).toBeVisible();
+  await page.screenshot({ path: info.outputPath("floating-calendar.png"), animations: "disabled", scale: "css" });
+  await calendar.getByRole("button", { name: "28", exact: true }).click();
+  await expect(calendar).toHaveCount(0);
+  await expect(trigger).toContainText("28");
+  await expect(modal).toBeVisible();
+  await trigger.click();
+  await page.keyboard.press("Escape");
+  await expect(calendar).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await modal.getByRole("heading").click();
+  await expect(calendar).toHaveCount(0);
+  await expect(modal).toBeVisible();
+});

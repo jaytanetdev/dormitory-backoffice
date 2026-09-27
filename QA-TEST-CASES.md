@@ -58,3 +58,7 @@ Owner/branch manager/finance/report viewer are permission based; delegation and 
 ## Follow-up B39 — modal dismiss contrast
 
 Open invoice dialog in light and dark themes on desktop/mobile; inspect dismiss text contrast and click. Required result: contrast >= 4.5:1 and the dialog closes. Source: e2e/workflows.spec.ts.
+
+## Follow-up B40 — floating date picker
+
+Open move-out dialog in a short viewport, open the date picker without scrolling the modal further, choose day 28, reopen and press Escape, then reopen and click outside. Expected: popup is a body portal entirely within the viewport; selection updates the date; the move-out dialog stays open; Escape restores trigger focus. Run on desktop/mobile. Source: e2e/workflows.spec.ts.
