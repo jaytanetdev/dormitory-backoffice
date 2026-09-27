@@ -1,35 +1,55 @@
 /* Calm surfaces, orange actions, and a collection-first dashboard. */
 :root {
-  --paper: #f5f6f8;
-  --surface: #fff;
-  --surface-soft: #f6f7f9;
-  --ink: #202733;
-  --muted: #727b89;
-  --line: #e8ebef;
-  --blue: #bd4510;
-  --accent: #e96723;
-  --teal: #16816a;
-  --coral: #ca4260;
-  --amber: #a66e10;
-  --partial: #7161bb;
-  --sidebar: #fff;
-  --orange-soft: #fff0e7;
+  --paper: #d7d9d2;
+  --surface: #e6e7e1;
+  --surface-soft: #dde0d7;
+  --sidebar: #dfe2d8;
+  --room-occupied: #397e69;
+  --room-vacant: #9da892;
+  --room-reserved: #916923;
+  --room-maintenance: #a64e63;
+  --ink: #27322e;
+  --muted: #58655d;
+  --line: #c6cbc0;
+  --blue: #a2461c;
+  --accent: #b96739;
+  --teal: #397e69;
+  --coral: #a64e63;
+  --amber: #916923;
+  --partial: #76668f;
+  --orange-soft: #e3d7c6;
+  --action: #a2461c;
+  --action-hover: #873815;
+  --action-ink: #f3eee5;
+  --tooltip: #2b382f;
+  --tooltip-ink: #e7ece1;
+  --tooltip-muted: #bdc9ba;
 }
 :root[data-theme="dark"] {
-  --paper: #12161d;
-  --surface: #1b222c;
-  --surface-soft: #242c37;
-  --ink: #f2f5f9;
-  --muted: #a5afbe;
-  --line: #303945;
-  --blue: #ffad78;
-  --accent: #f97b36;
-  --teal: #54cdb0;
-  --coral: #ff8ba3;
-  --amber: #f2bd5b;
-  --partial: #b5a6f0;
-  --sidebar: #191f28;
-  --orange-soft: #39281f;
+  --paper: #1c231e;
+  --surface: #252e27;
+  --surface-soft: #2e3930;
+  --sidebar: #212a23;
+  --room-occupied: #73aa91;
+  --room-vacant: #8e9b86;
+  --room-reserved: #c0a267;
+  --room-maintenance: #c28394;
+  --ink: #dee5d9;
+  --muted: #a5b39f;
+  --line: #3c493e;
+  --blue: #d09265;
+  --accent: #b77749;
+  --teal: #73aa91;
+  --coral: #c28394;
+  --amber: #c0a267;
+  --partial: #ab9bbf;
+  --orange-soft: #3c3428;
+  --action: #a25a30;
+  --action-hover: #8b4d28;
+  --action-ink: #f0e9dc;
+  --tooltip: #d1dbc9;
+  --tooltip-ink: #27352a;
+  --tooltip-muted: #52644f;
 }
 body {
   background: var(--paper);
@@ -56,7 +76,7 @@ body {
   color: var(--muted);
 }
 .sidebar .brand-mark {
-  background: #c64b12;
+  background: var(--action);
   border-radius: 11px;
   width: 34px;
   height: 34px;
@@ -149,13 +169,13 @@ body {
 .button,
 .reports-page .report-download,
 .chat-composer button {
-  background: #c64b12;
+  background: var(--action);
   border-radius: 10px;
   font-weight: 600;
   box-shadow: none;
 }
 .button:hover {
-  background: #ab3f0e;
+  background: var(--action-hover);
 }
 .button.secondary {
   background: var(--surface);
@@ -877,4 +897,121 @@ body {
 }
 .collection-list-toggle[aria-expanded="true"] {
   color: var(--muted);
+}
+
+.button:not(.secondary),
+.chat-composer button {
+  color: var(--action-ink);
+}
+
+/* Exact amounts remain readable on hover, keyboard focus, and touch. */
+.chart-tooltip-trigger {
+  position: relative;
+}
+.chart-tooltip-trigger:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+.chart-tooltip-trigger:has(.chart-tooltip:not([hidden])) {
+  z-index: 2;
+}
+.chart-tooltip {
+  position: absolute;
+  z-index: 8;
+  bottom: calc(100% - 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--tooltip-ink) 16%, var(--tooltip));
+  border-radius: 10px;
+  background: var(--tooltip);
+  color: var(--tooltip-ink);
+  box-shadow: 0 5px 16px #17201924;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: left;
+  white-space: nowrap;
+  cursor: default;
+}
+.chart-tooltip[hidden] {
+  display: none;
+}
+.chart-tooltip-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 650;
+  margin-bottom: 7px;
+}
+.chart-tooltip-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.chart-tooltip-row > span {
+  color: var(--tooltip-muted);
+}
+.chart-tooltip-row b {
+  color: var(--tooltip-ink);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.trend-chart .trend-column {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  min-width: 0;
+}
+.trend-column .trend-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.trend-column > .trend-month {
+  background: transparent;
+}
+.trend-column > .chart-tooltip {
+  background: var(--tooltip);
+  width: 220px;
+  bottom: 45%;
+  text-align: left;
+}
+.trend-column:first-child > .chart-tooltip {
+  left: 0;
+  transform: none;
+}
+.trend-column:last-child > .chart-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.collection-status-chart .chart-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.collection-status-chart .chart-tooltip b {
+  text-align: right;
+  font-size: 12px;
+}
+@media (max-width: 720px) {
+  .trend-column:nth-child(2) > .chart-tooltip {
+    left: -25px;
+    transform: none;
+  }
+  .trend-column:nth-last-child(2) > .chart-tooltip {
+    left: auto;
+    right: -25px;
+    transform: none;
+  }
+  .trend-column > .chart-tooltip {
+    width: 198px;
+  }
 }

@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { ChartTooltipButton } from "@/components/chart-tooltip-button";
 import { Icon } from "@/components/icons";
 import type { InvoiceDto } from "@/lib/api-types";
 import { receivedAmount } from "@/lib/billing-utils";
@@ -81,10 +82,18 @@ export function CollectionOverview({ invoices }: { invoices: InvoiceDto[] }) {
   );
   const due = rows.reduce((sum, row) => sum + row.balance, 0);
   const progress = total ? Math.min(100, (received / total) * 100) : 0;
-  const counts = groups.map((group) => ({
-    ...group,
-    count: rows.filter((row) => row.status === group.key).length,
-  }));
+  const counts = groups.map((group) => {
+    const matching = rows.filter((row) => row.status === group.key);
+    return {
+      ...group,
+      count: matching.length,
+      received: matching.reduce(
+        (sum, row) => sum + receivedAmount(row.invoice),
+        0,
+      ),
+      due: matching.reduce((sum, row) => sum + row.balance, 0),
+    };
+  });
   const max = Math.max(1, ...counts.map((group) => group.count));
   const label = (key: string) => {
     const [year, month] = key.split("-").map(Number);
@@ -158,8 +167,32 @@ export function CollectionOverview({ invoices }: { invoices: InvoiceDto[] }) {
             สถานะบิล <span>{rows.length} บิล</span>
           </p>
           {counts.map((group) => (
-            <button
+            <ChartTooltipButton
               key={group.key}
+              aria-label={group.label + " " + group.count + " บิล"}
+              tooltip={
+                <>
+                  <strong className="chart-tooltip-title">{group.label}</strong>
+                  <span className="chart-tooltip-row">
+                    <span>จำนวนบิล</span>
+                    <b>
+                      {group.count} บิล (
+                      {rows.length
+                        ? Math.round((group.count / rows.length) * 100)
+                        : 0}
+                      %)
+                    </b>
+                  </span>
+                  <span className="chart-tooltip-row">
+                    <span>รับชำระแล้ว</span>
+                    <b>{money(group.received)}</b>
+                  </span>
+                  <span className="chart-tooltip-row">
+                    <span>คงเหลือ</span>
+                    <b>{money(group.due)}</b>
+                  </span>
+                </>
+              }
               aria-pressed={filter === group.key}
               onClick={() => choose(filter === group.key ? "ALL" : group.key)}
             >
@@ -179,7 +212,7 @@ export function CollectionOverview({ invoices }: { invoices: InvoiceDto[] }) {
                 {group.count}
                 <small> บิล</small>
               </b>
-            </button>
+            </ChartTooltipButton>
           ))}
         </div>
       </div>

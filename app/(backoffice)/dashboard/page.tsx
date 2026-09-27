@@ -4,6 +4,7 @@ import { receivedAmount } from "@/lib/billing-utils";
 import Link from "next/link";
 import { useMemo } from "react";
 import { collectionStatus } from "@/lib/collection";
+import { ChartTooltipButton } from "@/components/chart-tooltip-button";
 import { CollectionOverview } from "@/components/collection-overview";
 import { Icon } from "@/components/icons";
 import { ApiNotice } from "@/components/api-notice";
@@ -93,6 +94,10 @@ export default function Dashboard() {
       );
       return {
         label: monthName(month),
+        fullLabel: new Intl.DateTimeFormat("th-TH", {
+          month: "long",
+          year: "numeric",
+        }).format(date),
         billed: bills.reduce((sum, bill) => sum + Number(bill.total), 0),
         received: bills.reduce((sum, bill) => sum + receivedAmount(bill), 0),
       };
@@ -261,7 +266,7 @@ export default function Dashboard() {
               <div className="panel-head">
                 <div>
                   <h2>แนวโน้มการชำระเงิน</h2>
-                  <p>ยอดตามรอบบิล ย้อนหลัง 6 เดือน</p>
+                  <p>ย้อนหลัง 6 เดือน ชี้หรือแตะกราฟเพื่อดูยอด</p>
                 </div>
                 <div className="chart-legend">
                   <span>
@@ -288,12 +293,45 @@ export default function Dashboard() {
                   </div>
                   <div
                     className="trend-chart"
-                    role="img"
-                    aria-label="ยอดเรียกเก็บสีส้มและยอดรับชำระสีเขียว ย้อนหลัง 6 เดือน ดูยอดละเอียดในตารางใต้กราฟ"
+                    role="group"
+                    aria-label="กราฟยอดเงินย้อนหลัง 6 เดือน ชี้หรือแตะเดือนเพื่อดูยอดเงิน"
                   >
                     {trend.map((item, index) => (
-                      <div className="trend-column" key={index}>
-                        <div className="trend-bars">
+                      <ChartTooltipButton
+                        className="trend-column"
+                        key={index}
+                        aria-label={
+                          item.fullLabel +
+                          " เรียกเก็บ " +
+                          money(item.billed) +
+                          " รับแล้ว " +
+                          money(item.received)
+                        }
+                        tooltip={
+                          <>
+                            <strong className="chart-tooltip-title">
+                              {item.fullLabel}
+                            </strong>
+                            <span className="chart-tooltip-row">
+                              <span>เรียกเก็บ</span>
+                              <b>{money(item.billed)}</b>
+                            </span>
+                            <span className="chart-tooltip-row">
+                              <span>รับชำระแล้ว</span>
+                              <b>{money(item.received)}</b>
+                            </span>
+                            <span className="chart-tooltip-row">
+                              <span>คงเหลือ</span>
+                              <b>
+                                {money(
+                                  Math.max(0, item.billed - item.received),
+                                )}
+                              </b>
+                            </span>
+                          </>
+                        }
+                      >
+                        <span className="trend-bars" aria-hidden="true">
                           <i
                             className="bar billed"
                             style={{
@@ -306,9 +344,9 @@ export default function Dashboard() {
                               height: `${(item.received / trendMax) * 100}%`,
                             }}
                           />
-                        </div>
-                        <span>{item.label}</span>
-                      </div>
+                        </span>
+                        <span className="trend-month">{item.label}</span>
+                      </ChartTooltipButton>
                     ))}
                   </div>
                 </div>
