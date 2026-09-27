@@ -54,3 +54,7 @@ Unit tests: lib/*.test.mjs through tsx. They cover concurrent 401 single refresh
 ## Role coverage
 
 Owner/branch manager/finance/report viewer are permission based; delegation and branch scope are also tested at API layer. Owner cannot access platform administration. Platform admin creates stores/first owners and roles. Report viewer cannot create bills, approve, move out or edit settings. Resident uses a separate JWT and own-contract scope tested in API and Mini App.
+
+## Follow-up B39 — modal dismiss contrast
+
+Open invoice dialog in light and dark themes on desktop/mobile; inspect dismiss text contrast and click. Required result: contrast >= 4.5:1 and the dialog closes. Source: e2e/workflows.spec.ts.

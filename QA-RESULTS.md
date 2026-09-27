@@ -33,3 +33,7 @@ Real LINE login/webhooks, Cloudinary upload, PostgreSQL transaction behavior/con
 ## Reproduce
 
 Install dependencies with pnpm, then run the commands in QA-TEST-CASES.md. Browser setup requires `pnpm exec playwright install chromium`. Playwright starts/stops its own isolated development server with hidden Windows processes, captures logs in test-results/server.log, and restores generated Next config files. HTML reports and failure screenshots/traces are generated locally under playwright-report/ and test-results/ and are ignored by Git.
+
+## Follow-up: modal dismiss contrast
+
+A later screenshot exposed a CSS cascade bug: primary action text color also applied to ghost buttons. Ghost buttons now retain the theme text color, have a visible border, and include hover/focus states. B39 checks normal text contrast >= 4.5:1 and successful dismissal in light/dark themes on both desktop and mobile. This targeted follow-up is separate from the full-run totals above.

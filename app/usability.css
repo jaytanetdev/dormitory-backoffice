@@ -305,6 +305,21 @@ body {
 .button.secondary:hover {
   background: var(--surface-soft);
 }
+.button.ghost {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.button.ghost:hover {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--muted);
+}
+.button.ghost:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 3px;
+}
 .overview-heading {
   margin-bottom: 24px;
 }
@@ -1019,7 +1034,7 @@ body {
   color: var(--muted);
 }
 
-.button:not(.secondary),
+.button:not(.secondary):not(.ghost),
 .chat-composer button {
   color: var(--action-ink);
 }

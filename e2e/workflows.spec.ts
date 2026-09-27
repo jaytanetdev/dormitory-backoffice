@@ -557,3 +557,28 @@ test("B38 suspend team account updates status", async ({ page, state }) => {
       .body.status,
   ).toBe("SUSPENDED");
 });
+
+test("B39 modal dismiss button has readable contrast in both themes", async ({ page }) => {
+  await page.goto("/bills");
+  for (const theme of ["light", "dark"]) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
+    await page.getByRole("button", { name: /สร้างใบแจ้งหนี้/ }).click();
+    const dismiss = page.getByRole("dialog").locator(".button.ghost");
+    await expect(dismiss).toBeVisible();
+    const contrast = await dismiss.evaluate(button => {
+      const style = getComputedStyle(button);
+      const luminance = (color: string) => {
+        const channels = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(value => {
+          const channel = value / 255;
+          return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4;
+        });
+        return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+      };
+      const foreground = luminance(style.color), background = luminance(style.backgroundColor);
+      return (Math.max(foreground, background) + .05) / (Math.min(foreground, background) + .05);
+    });
+    expect(contrast).toBeGreaterThanOrEqual(4.5);
+    await dismiss.click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  }
+});
