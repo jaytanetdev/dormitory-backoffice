@@ -1,25 +1,25 @@
 /* Calm surfaces, orange actions, and a collection-first dashboard. */
 :root {
-  --paper: #ebe7e1;
-  --surface: #f8f5ef;
-  --surface-soft: #f0eae2;
-  --sidebar: #f18a3e;
+  --paper: #f1eee9;
+  --surface: #fffcf7;
+  --surface-soft: #f5eee6;
+  --sidebar: #d3420b;
   --room-occupied: #397e69;
   --room-vacant: #9da892;
   --room-reserved: #916923;
   --room-maintenance: #a64e63;
-  --ink: #332d28;
-  --muted: #74695f;
+  --ink: #424854;
+  --muted: #69717e;
   --line: #ddd5cb;
-  --blue: #aa461b;
-  --accent: #d1763c;
+  --blue: #c34415;
+  --accent: #e46a2e;
   --teal: #397e69;
   --coral: #a64e63;
   --amber: #916923;
   --partial: #76668f;
-  --orange-soft: #f3e2cf;
-  --action: #aa461b;
-  --action-hover: #903815;
+  --orange-soft: #ffead8;
+  --action: #c34415;
+  --action-hover: #ae360e;
   --action-ink: #fff5e9;
   --tooltip: #382c24;
   --tooltip-ink: #faf0e3;
@@ -29,7 +29,7 @@
   --paper: #211e1c;
   --surface: #2b2724;
   --surface-soft: #34302c;
-  --sidebar: #df742e;
+  --sidebar: #c9420c;
   --room-occupied: #73aa91;
   --room-vacant: #8e9b86;
   --room-reserved: #c0a267;
@@ -58,12 +58,12 @@ body {
   grid-template-columns: 224px minmax(0, 1fr);
 }
 .app-shell > .sidebar {
-  --sidebar-ink: #40220e;
-  --sidebar-muted: #663815;
-  --sidebar-line: #40220e26;
-  --sidebar-hover: #ffffff26;
-  --sidebar-selected: #fff3e5;
-  --sidebar-active: #9d3e0c;
+  --sidebar-ink: #ffffff;
+  --sidebar-muted: #ffffff;
+  --sidebar-line: #ffffff33;
+  --sidebar-hover: #ffffff1c;
+  --sidebar-selected: #ffffff;
+  --sidebar-active: #bf3c0c;
   color: var(--sidebar-ink);
   background: var(--sidebar);
   border-right: 1px solid var(--sidebar-line);
@@ -139,7 +139,7 @@ body {
   color: var(--sidebar-muted);
 }
 .sidebar-signout:hover {
-  color: var(--sidebar-active);
+  color: var(--sidebar-ink);
 }
 .sidebar .sidebar-quota {
   background: var(--sidebar-hover);
