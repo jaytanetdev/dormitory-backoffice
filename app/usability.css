@@ -29,7 +29,7 @@
   --paper: #211e1c;
   --surface: #2b2724;
   --surface-soft: #34302c;
-  --sidebar: #c9420c;
+  --sidebar: #211e1c;
   --room-occupied: #73aa91;
   --room-vacant: #8e9b86;
   --room-reserved: #c0a267;
@@ -68,6 +68,14 @@ body {
   background: var(--sidebar);
   border-right: 1px solid var(--sidebar-line);
   padding: 20px 14px 16px;
+}
+:root[data-theme="dark"] .app-shell > .sidebar {
+  --sidebar-ink: #f7eee5;
+  --sidebar-muted: #d2c5b9;
+  --sidebar-line: #494039;
+  --sidebar-hover: #ffffff0d;
+  --sidebar-selected: #492d20;
+  --sidebar-active: #ffb37c;
 }
 .sidebar .brand {
   border: 0;
