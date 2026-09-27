@@ -201,22 +201,23 @@ export default function Users() {
           <p className="empty-state">ไม่พบสมาชิกที่ตรงกับการค้นหา</p>
         )}
       </div>
-      <section className="role-guide">
-        <h2>เลือกบทบาทอย่างไร</h2>
-        {roles.data.map((role) => (
-          <article key={role.id}>
-            <strong>{role.name}</strong>
-            <p>{role.description || "สิทธิ์ตามที่ผู้ดูแลระบบกำหนด"}</p>
-            <span>{role.permissions.length} สิทธิ์</span>
-          </article>
-        ))}
-        {!roles.loading && !roles.error && !roles.data.length && (
-          <p>
-            ยังไม่มีบทบาทที่คุณมอบหมายได้ ให้ Platform Admin
-            สร้างบทบาทของทีมก่อน
-          </p>
-        )}
-      </section>
+      <details className="team-role-help">
+        <summary>แต่ละบทบาททำอะไรได้บ้าง</summary>
+        <section className="role-guide">
+          {roles.data.map((role) => (
+            <article key={role.id}>
+              <strong>{role.name}</strong>
+              <p>{role.description || "สิทธิ์ตามที่ผู้ดูแลระบบกำหนด"}</p>
+            </article>
+          ))}
+          {!roles.loading && !roles.error && !roles.data.length && (
+            <p>
+              ยังไม่มีบทบาทที่คุณมอบหมายได้ ให้ Platform Admin
+              สร้างบทบาทของทีมก่อน
+            </p>
+          )}
+        </section>
+      </details>
       {open && (
         <div
           className="modal-backdrop"
