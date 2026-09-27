@@ -1143,3 +1143,6 @@ body {
 .content .summary-strip .metric::before {
   display: none;
 }
+
+/* Keep long forms and their submit actions reachable on small screens. */
+.modal { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; }

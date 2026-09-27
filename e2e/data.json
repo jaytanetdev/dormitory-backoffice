@@ -1,0 +1,443 @@
+{
+  "roles": [
+    {
+      "id": "role-0",
+      "name": "ผู้จัดการหอพัก",
+      "description": "ดูแลห้อง ผู้เช่า บิล สลิป และสมาชิกทีมภายในสาขาที่ได้รับสิทธิ์",
+      "isSystem": false,
+      "scopeLevel": "BRANCH",
+      "permissions": [
+        {
+          "permission": {
+            "key": "branch.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "property.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "property.create"
+          }
+        },
+        {
+          "permission": {
+            "key": "property.update"
+          }
+        },
+        {
+          "permission": {
+            "key": "room.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "room.create"
+          }
+        },
+        {
+          "permission": {
+            "key": "room.update"
+          }
+        },
+        {
+          "permission": {
+            "key": "room.transfer"
+          }
+        },
+        {
+          "permission": {
+            "key": "resident.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "resident.create"
+          }
+        },
+        {
+          "permission": {
+            "key": "resident.update"
+          }
+        },
+        {
+          "permission": {
+            "key": "contract.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "contract.create"
+          }
+        },
+        {
+          "permission": {
+            "key": "contract.update"
+          }
+        },
+        {
+          "permission": {
+            "key": "contract.invite"
+          }
+        },
+        {
+          "permission": {
+            "key": "meter.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "meter.create"
+          }
+        },
+        {
+          "permission": {
+            "key": "meter.update"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.create"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.update"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.issue"
+          }
+        },
+        {
+          "permission": {
+            "key": "payment.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "payment.approve"
+          }
+        },
+        {
+          "permission": {
+            "key": "notification.send"
+          }
+        },
+        {
+          "permission": {
+            "key": "settings.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "settings.update"
+          }
+        },
+        {
+          "permission": {
+            "key": "report.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "report.export"
+          }
+        },
+        {
+          "permission": {
+            "key": "user.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "user.create"
+          }
+        },
+        {
+          "permission": {
+            "key": "user.update"
+          }
+        }
+      ]
+    },
+    {
+      "id": "role-1",
+      "name": "การเงิน",
+      "description": "ออกบิล ตรวจสลิป และส่งออกรายงานการเงินในสาขาที่ได้รับสิทธิ์",
+      "isSystem": false,
+      "scopeLevel": "BRANCH",
+      "permissions": [
+        {
+          "permission": {
+            "key": "branch.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "property.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "room.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "resident.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "contract.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "meter.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.create"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.update"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.issue"
+          }
+        },
+        {
+          "permission": {
+            "key": "payment.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "payment.approve"
+          }
+        },
+        {
+          "permission": {
+            "key": "notification.send"
+          }
+        },
+        {
+          "permission": {
+            "key": "settings.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "report.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "report.export"
+          }
+        }
+      ]
+    },
+    {
+      "id": "role-2",
+      "name": "ดูรายงาน",
+      "description": "ดูข้อมูลห้อง ผู้เช่า บิล และรายงาน โดยแก้ไขหรืออนุมัติไม่ได้",
+      "isSystem": false,
+      "scopeLevel": "BRANCH",
+      "permissions": [
+        {
+          "permission": {
+            "key": "branch.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "property.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "room.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "resident.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "invoice.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "payment.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "report.view"
+          }
+        },
+        {
+          "permission": {
+            "key": "report.export"
+          }
+        }
+      ]
+    }
+  ],
+  "invoices": [
+    {
+      "id": "bill-0",
+      "number": "INV-QA-1",
+      "status": "PAID",
+      "total": 5000,
+      "dueDate": "2026-09-30T00:00:00+07:00",
+      "period": {
+        "year": 2026,
+        "month": 9
+      },
+      "room": {
+        "id": "room-0",
+        "number": "101"
+      },
+      "contract": {
+        "id": "contract-0",
+        "resident": {
+          "fullName": "สมใจ ตัวอย่าง"
+        }
+      },
+      "items": [],
+      "payments": [
+        {
+          "status": "APPROVED",
+          "amount": 5000
+        }
+      ]
+    },
+    {
+      "id": "bill-1",
+      "number": "INV-QA-2",
+      "status": "ISSUED",
+      "total": 5000,
+      "dueDate": "2026-09-30T00:00:00+07:00",
+      "period": {
+        "year": 2026,
+        "month": 9
+      },
+      "room": {
+        "id": "room-1",
+        "number": "102"
+      },
+      "contract": {
+        "id": "contract-1",
+        "resident": {
+          "fullName": "นิดา ตัวอย่าง"
+        }
+      },
+      "items": [],
+      "payments": [
+        {
+          "status": "PENDING",
+          "amount": 5000
+        }
+      ]
+    },
+    {
+      "id": "bill-2",
+      "number": "INV-QA-3",
+      "status": "PARTIALLY_PAID",
+      "total": 5000,
+      "dueDate": "2026-09-30T00:00:00+07:00",
+      "period": {
+        "year": 2026,
+        "month": 9
+      },
+      "room": {
+        "id": "room-2",
+        "number": "103"
+      },
+      "contract": {
+        "id": "contract-2",
+        "resident": {
+          "fullName": "วิชัย ตัวอย่าง"
+        }
+      },
+      "items": [],
+      "payments": [
+        {
+          "status": "APPROVED",
+          "amount": 2000
+        }
+      ]
+    },
+    {
+      "id": "bill-3",
+      "number": "INV-QA-4",
+      "status": "ISSUED",
+      "total": 5000,
+      "dueDate": "2026-09-30T00:00:00+07:00",
+      "period": {
+        "year": 2026,
+        "month": 9
+      },
+      "room": {
+        "id": "room-3",
+        "number": "104"
+      },
+      "contract": {
+        "id": "contract-3",
+        "resident": {
+          "fullName": "พิม ตัวอย่าง"
+        }
+      },
+      "items": [],
+      "payments": []
+    },
+    {
+      "id": "bill-4",
+      "number": "INV-QA-5",
+      "status": "OVERDUE",
+      "total": 5000,
+      "dueDate": "2026-09-01T00:00:00+07:00",
+      "period": {
+        "year": 2026,
+        "month": 9
+      },
+      "room": {
+        "id": "room-4",
+        "number": "105"
+      },
+      "contract": {
+        "id": "contract-4",
+        "resident": {
+          "fullName": "เอก ตัวอย่าง"
+        }
+      },
+      "items": [],
+      "payments": []
+    }
+  ]
+}

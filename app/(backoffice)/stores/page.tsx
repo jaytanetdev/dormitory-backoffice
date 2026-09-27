@@ -1,4 +1,5 @@
 "use client";
+import { usePermission } from "@/lib/use-permission";
 
 import { FormEvent, useEffect, useState } from "react";
 import { ApiNotice } from "@/components/api-notice";
@@ -8,17 +9,56 @@ import type { BranchDto } from "@/lib/api-types";
 import { useApiQuery } from "@/lib/use-api";
 
 const emptyBranches: BranchDto[] = [];
-type BranchForm = { name:string; code:string; address:string; phone:string; lineName:string; miniChannelId:string; miniChannelSecret:string; liffId:string; messagingChannelId:string; messagingAccessToken:string; messagingSecret:string };
-const initialForm: BranchForm = { name:"", code:"", address:"", phone:"", lineName:"", miniChannelId:"", miniChannelSecret:"", liffId:"", messagingChannelId:"", messagingAccessToken:"", messagingSecret:"" };
-const claimUrl = (branch: BranchDto) => branch.claimUrl ?? branch.residentClaimUrl ?? null;
-const codeFromName = (name: string) => name.trim().replace(/[^a-zA-Z0-9ก-๙]/g, "").slice(0, 12).toUpperCase();
+type BranchForm = {
+  name: string;
+  code: string;
+  address: string;
+  phone: string;
+  lineName: string;
+  miniChannelId: string;
+  miniChannelSecret: string;
+  liffId: string;
+  messagingChannelId: string;
+  messagingAccessToken: string;
+  messagingSecret: string;
+};
+const initialForm: BranchForm = {
+  name: "",
+  code: "",
+  address: "",
+  phone: "",
+  lineName: "",
+  miniChannelId: "",
+  miniChannelSecret: "",
+  liffId: "",
+  messagingChannelId: "",
+  messagingAccessToken: "",
+  messagingSecret: "",
+};
+const claimUrl = (branch: BranchDto) =>
+  branch.claimUrl ?? branch.residentClaimUrl ?? null;
+const codeFromName = (name: string) =>
+  name
+    .trim()
+    .replace(/[^a-zA-Z0-9ก-๙]/g, "")
+    .slice(0, 12)
+    .toUpperCase();
 
 function LineStatus({ branch }: { branch: BranchDto }) {
-  const connected = Boolean(branch.lineIntegration?.id || branch.lineIntegration?.loginChannelId);
-  return <span className={`line-status ${connected ? "connected" : "missing"}`}><i aria-hidden="true" />{connected ? "เชื่อม LINE แล้ว" : "ยังไม่ได้เชื่อม LINE"}</span>;
+  const connected = Boolean(
+    branch.lineIntegration?.id || branch.lineIntegration?.loginChannelId,
+  );
+  return (
+    <span className={`line-status ${connected ? "connected" : "missing"}`}>
+      <i aria-hidden="true" />
+      {connected ? "เชื่อม LINE แล้ว" : "ยังไม่ได้เชื่อม LINE"}
+    </span>
+  );
 }
 
 export default function StoresPage() {
+  const canCreate = usePermission("branch.create");
+  const canUpdate = usePermission("branch.update");
   const { removeBranch } = useBranch();
   const query = useApiQuery("/branches", emptyBranches);
   const [items, setItems] = useState<BranchDto[]>([]);
@@ -30,40 +70,485 @@ export default function StoresPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<BranchDto | null>(null);
   useEffect(() => setItems(query.data), [query.data]);
-  const set = (key: keyof BranchForm, value: string) => setForm((old) => ({ ...old, [key]: value, ...(key === "name" && !editing && !old.code ? { code: codeFromName(value) } : {}) }));
-  function openCreate() { setError(null); setEditing(null); setForm(initialForm); setOpen(true); }
+  const set = (key: keyof BranchForm, value: string) =>
+    setForm((old) => ({
+      ...old,
+      [key]: value,
+      ...(key === "name" && !editing && !old.code
+        ? { code: codeFromName(value) }
+        : {}),
+    }));
+  function openCreate() {
+    setError(null);
+    setEditing(null);
+    setForm(initialForm);
+    setOpen(true);
+  }
   function openEdit(branch: BranchDto) {
     const line = branch.lineIntegration;
-    setError(null); setEditing(branch);
-    setForm({ name:branch.name, code:branch.code, address:branch.address ?? "", phone:branch.phone ?? "", lineName:line?.displayName ?? "", miniChannelId:line?.miniAppChannelId ?? line?.loginChannelId ?? "", miniChannelSecret:"", liffId:line?.liffId ?? "", messagingChannelId:line?.messagingChannelId ?? "", messagingAccessToken:"", messagingSecret:"" }); setOpen(true);
+    setError(null);
+    setEditing(branch);
+    setForm({
+      name: branch.name,
+      code: branch.code,
+      address: branch.address ?? "",
+      phone: branch.phone ?? "",
+      lineName: line?.displayName ?? "",
+      miniChannelId: line?.miniAppChannelId ?? line?.loginChannelId ?? "",
+      miniChannelSecret: "",
+      liffId: line?.liffId ?? "",
+      messagingChannelId: line?.messagingChannelId ?? "",
+      messagingAccessToken: "",
+      messagingSecret: "",
+    });
+    setOpen(true);
   }
   async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (busy) return; setBusy(true); setError(null);
-    const payload = { name:form.name.trim(), ...(editing ? {} : { code:form.code.trim().toUpperCase() }), address:form.address.trim() || undefined, phone:form.phone.trim() || undefined, lineDisplayName:form.lineName.trim(), lineMiniAppChannelId:form.miniChannelId.trim(), lineMiniAppChannelSecret:form.miniChannelSecret.trim() || undefined, lineLiffId:form.liffId.trim(), lineMessagingChannelId:form.messagingChannelId.trim(), ...(form.messagingAccessToken.trim() ? { lineMessagingAccessToken:form.messagingAccessToken.trim() } : {}), ...(form.messagingSecret.trim() ? { lineMessagingSecret:form.messagingSecret.trim() } : {}) };
-    const result = editing ? await apiMutation<BranchDto>(`/branches/${editing.id}`, payload, "PATCH") : await apiMutation<BranchDto>("/branches", payload);
-    setBusy(false); if (!result.ok) { setError(result.message); return; }
-    setItems((old) => editing ? old.map((item) => item.id === editing.id ? result.data : item) : [...old, result.data]); setOpen(false);
+    event.preventDefault();
+    if (busy || (editing ? !canUpdate : !canCreate)) return;
+    setBusy(true);
+    setError(null);
+    const payload = {
+      name: form.name.trim(),
+      ...(editing ? {} : { code: form.code.trim().toUpperCase() }),
+      address: form.address.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      lineDisplayName: form.lineName.trim(),
+      lineMiniAppChannelId: form.miniChannelId.trim(),
+      lineMiniAppChannelSecret: form.miniChannelSecret.trim() || undefined,
+      lineLiffId: form.liffId.trim(),
+      lineMessagingChannelId: form.messagingChannelId.trim(),
+      ...(form.messagingAccessToken.trim()
+        ? { lineMessagingAccessToken: form.messagingAccessToken.trim() }
+        : {}),
+      ...(form.messagingSecret.trim()
+        ? { lineMessagingSecret: form.messagingSecret.trim() }
+        : {}),
+    };
+    const result = editing
+      ? await apiMutation<BranchDto>(
+          `/branches/${editing.id}`,
+          payload,
+          "PATCH",
+        )
+      : await apiMutation<BranchDto>("/branches", payload);
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setItems((old) =>
+      editing
+        ? old.map((item) => (item.id === editing.id ? result.data : item))
+        : [...old, result.data],
+    );
+    setOpen(false);
   }
-  async function copyLink(branch: BranchDto) { const link = claimUrl(branch); if (!link) return; await navigator.clipboard.writeText(link); setCopied(branch.id); window.setTimeout(() => setCopied(null), 1800); }
+  async function copyLink(branch: BranchDto) {
+    const link = claimUrl(branch);
+    if (!link) return;
+    await navigator.clipboard.writeText(link);
+    setCopied(branch.id);
+    window.setTimeout(() => setCopied(null), 1800);
+  }
   async function deleteBranch() {
-    if (!deleting || busy) return;
-    setBusy(true); setError(null);
+    if (!canUpdate || !deleting || busy) return;
+    setBusy(true);
+    setError(null);
     const result = await apiMutation(`/branches/${deleting.id}`, {}, "DELETE");
     setBusy(false);
-    if (!result.ok) { setError(result.message); return; }
-    setItems((current) => current.filter((branch) => branch.id !== deleting.id));
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setItems((current) =>
+      current.filter((branch) => branch.id !== deleting.id),
+    );
     removeBranch(deleting.id);
     setDeleting(null);
   }
-  return <>
-    <section className="branch-hero"><div><div className="eyebrow">โครงสร้างธุรกิจ</div><h1>สาขาและ LINE OA</h1><p className="subtitle">ทุกสาขามี LINE OA ของตัวเอง และสร้างลิงก์สำหรับให้ผู้เช่าผูกห้องได้จากที่เดียว</p></div><button type="button" className="button" onClick={openCreate}>＋ เพิ่มสาขา</button></section>
-    <ApiNotice loading={query.loading} error={query.error || error} />
-    {!query.loading && !items.length && <section className="branch-empty"><div className="branch-empty-icon">⌘</div><h2>เริ่มต้นด้วยการสร้างสาขา</h2><p>กรอกข้อมูล LINE OA ของสาขา แล้วระบบจะสร้างลิงก์ให้ผู้เช่าเข้ามาผูกห้องด้วยตัวเอง</p><button type="button" className="button" onClick={openCreate}>สร้างสาขาแรก</button></section>}
-    <div className="branch-grid">{items.map((branch) => { const link = claimUrl(branch); return <article className="branch-card" key={branch.id}><header><div><div className="branch-code">{branch.code}</div><h2>{branch.name}</h2></div><LineStatus branch={branch} /></header><p className="branch-address">{branch.address || "ยังไม่ได้ระบุที่อยู่"}</p><div className="branch-meta"><span>Branch ID</span><code title={branch.id}>{branch.id}</code></div><div className="branch-divider" /><div className="branch-link-area"><div><strong>ลิงก์ผูกห้องสำหรับผู้เช่า</strong><small>ส่งลิงก์นี้ผ่าน LINE หรือ QR ของสาขา</small></div>{link ? <button type="button" className="link-copy" onClick={() => void copyLink(branch)}>{copied === branch.id ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}</button> : <span className="link-pending">กำลังรอสร้างจากระบบ</span>}</div>{link && <p className="claim-url" title={link}>{link}</p>}<footer><button type="button" className="button secondary" onClick={() => openEdit(branch)}>ตั้งค่าสาขา</button><button type="button" className="button danger" onClick={() => setDeleting(branch)}>ลบสาขา</button></footer></article>; })}</div>
-    {deleting && <div className="modal-backdrop" role="presentation" onMouseDown={() => !busy && setDeleting(null)}><section className="modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">ลบสาขา</div><h2>ลบ {deleting.name} ?</h2></div><button type="button" className="icon-button" disabled={busy} onClick={() => setDeleting(null)}>×</button></div><p className="security-note">ลบได้เฉพาะสาขาที่ยังไม่มีห้อง ผู้เช่า สัญญา ใบแจ้งหนี้ หรือรายการชำระ เพื่อป้องกันประวัติการเงินสูญหาย</p><div className="modal-actions"><button type="button" className="button ghost" disabled={busy} onClick={() => setDeleting(null)}>ยกเลิก</button><button type="button" className="button danger" disabled={busy} onClick={() => void deleteBranch()}>{busy ? "กำลังลบ…" : "ยืนยันลบสาขา"}</button></div></section></div>}
-    {open && <div className="modal-backdrop" role="presentation" onMouseDown={() => !busy && setOpen(false)}><section className="modal branch-modal" role="dialog" aria-modal="true" aria-labelledby="branch-modal-title" onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">{editing ? "แก้ไขการเชื่อมต่อ" : "ตั้งค่าสาขาใหม่"}</div><h2 id="branch-modal-title">{editing ? editing.name : "สาขาและ LINE OA"}</h2></div><button type="button" className="icon-button" aria-label="ปิด" disabled={busy} onClick={() => setOpen(false)}>×</button></div><form onSubmit={save}>
-      <div className="form-section-title"><span>1</span><div><strong>ข้อมูลสาขา</strong><small>ใช้ระบุบริบทของห้อง สัญญา และใบแจ้งหนี้</small></div></div><div className="form-row"><label className="field"><span>ชื่อสาขา</span><input value={form.name} onChange={(event) => set("name", event.target.value)} required disabled={busy} placeholder="เช่น สาขารังสิต" /></label><label className="field"><span>รหัสสาขา</span><input value={form.code} onChange={(event) => set("code", event.target.value)} required disabled={busy} placeholder="RANGSIT" /></label></div><label className="field"><span>ที่อยู่</span><textarea value={form.address} onChange={(event) => set("address", event.target.value)} disabled={busy} placeholder="สำหรับแสดงในเอกสารและใบแจ้งหนี้" rows={2} /></label><label className="field"><span>เบอร์โทรสาขา</span><input value={form.phone} onChange={(event) => set("phone", event.target.value)} disabled={busy} inputMode="tel" placeholder="02-000-0000" /></label>
-      <div className="form-section-title line-title"><span>2</span><div><strong>LINE MINI App</strong><small>ใช้สำหรับ Login และเปิด Mini App ของผู้เช่า</small></div></div><label className="field"><span>ชื่อ Mini App</span><input value={form.lineName} onChange={(event) => set("lineName", event.target.value)} required disabled={busy} placeholder="เช่น หอพัก Mini App" /></label><div className="form-row"><label className="field"><span>Mini App Channel ID</span><input value={form.miniChannelId} onChange={(event) => set("miniChannelId", event.target.value)} required disabled={busy} autoComplete="off" placeholder="เช่น 2011332937" /></label><label className="field"><span>LIFF ID</span><input value={form.liffId} onChange={(event) => set("liffId", event.target.value)} required disabled={busy} autoComplete="off" placeholder="เช่น 2011332937-qQ" /></label></div><label className="field"><span>Mini App Channel secret {editing && <em>(เว้นว่างหากไม่เปลี่ยน)</em>}</span><input type="password" value={form.miniChannelSecret} onChange={(event) => set("miniChannelSecret", event.target.value)} required={!editing} disabled={busy} autoComplete="new-password" /></label><div className="form-section-title line-title"><span>3</span><div><strong>LINE Messaging API / Official Account</strong><small>ใช้ส่งใบแจ้งหนี้ การแจ้งเตือน และรับ Webhook</small></div></div><label className="field"><span>ชื่อสำหรับเรียก OA</span><input value={form.lineName} onChange={(event) => set("lineName", event.target.value)} required disabled={busy} placeholder="เช่น หอพัก Official Account" /></label><label className="field"><span>Messaging API Channel ID</span><input value={form.messagingChannelId} onChange={(event) => set("messagingChannelId", event.target.value)} required disabled={busy} autoComplete="off" placeholder="เช่น 2011334057" /></label><label className="field"><span>Channel access token {editing && <em>(เว้นว่างหากไม่เปลี่ยน)</em>}</span><input type="password" value={form.messagingAccessToken} onChange={(event) => set("messagingAccessToken", event.target.value)} required={!editing} disabled={busy} autoComplete="new-password" /></label><label className="field"><span>Messaging API Channel secret {editing && <em>(เว้นว่างหากไม่เปลี่ยน)</em>}</span><input type="password" value={form.messagingSecret} onChange={(event) => set("messagingSecret", event.target.value)} required={!editing} disabled={busy} autoComplete="new-password" /></label><p className="security-note">ข้อมูลลับจะถูกส่งเข้ารหัสไปเก็บที่เซิร์ฟเวอร์ และจะไม่แสดงกลับในหน้าเว็บ</p><div className="modal-actions"><button type="button" className="button ghost" disabled={busy} onClick={() => setOpen(false)}>ยกเลิก</button><button type="submit" className="button" disabled={busy}>{busy ? "กำลังบันทึก…" : editing ? "บันทึกการตั้งค่า" : "สร้างสาขาและลิงก์"}</button></div>
-    </form></section></div>}
-  </>;
+  return (
+    <>
+      <section className="branch-hero">
+        <div>
+          <div className="eyebrow">โครงสร้างธุรกิจ</div>
+          <h1>สาขาและ LINE OA</h1>
+          <p className="subtitle">
+            ทุกสาขามี LINE OA ของตัวเอง
+            และสร้างลิงก์สำหรับให้ผู้เช่าผูกห้องได้จากที่เดียว
+          </p>
+        </div>
+        <button
+          type="button"
+          className="button"
+          disabled={!canCreate}
+          onClick={openCreate}
+        >
+          ＋ เพิ่มสาขา
+        </button>
+      </section>
+      <ApiNotice loading={query.loading} error={query.error || error} />
+      {!query.loading && !items.length && (
+        <section className="branch-empty">
+          <div className="branch-empty-icon">⌘</div>
+          <h2>เริ่มต้นด้วยการสร้างสาขา</h2>
+          <p>
+            กรอกข้อมูล LINE OA ของสาขา
+            แล้วระบบจะสร้างลิงก์ให้ผู้เช่าเข้ามาผูกห้องด้วยตัวเอง
+          </p>
+          <button
+            type="button"
+            className="button"
+            disabled={!canCreate}
+            onClick={openCreate}
+          >
+            สร้างสาขาแรก
+          </button>
+        </section>
+      )}
+      <div className="branch-grid">
+        {items.map((branch) => {
+          const link = claimUrl(branch);
+          return (
+            <article className="branch-card" key={branch.id}>
+              <header>
+                <div>
+                  <div className="branch-code">{branch.code}</div>
+                  <h2>{branch.name}</h2>
+                </div>
+                <LineStatus branch={branch} />
+              </header>
+              <p className="branch-address">
+                {branch.address || "ยังไม่ได้ระบุที่อยู่"}
+              </p>
+              <div className="branch-meta">
+                <span>Branch ID</span>
+                <code title={branch.id}>{branch.id}</code>
+              </div>
+              <div className="branch-divider" />
+              <div className="branch-link-area">
+                <div>
+                  <strong>ลิงก์ผูกห้องสำหรับผู้เช่า</strong>
+                  <small>ส่งลิงก์นี้ผ่าน LINE หรือ QR ของสาขา</small>
+                </div>
+                {link ? (
+                  <button
+                    type="button"
+                    className="link-copy"
+                    onClick={() => void copyLink(branch)}
+                  >
+                    {copied === branch.id ? "คัดลอกแล้ว" : "คัดลอกลิงก์"}
+                  </button>
+                ) : (
+                  <span className="link-pending">กำลังรอสร้างจากระบบ</span>
+                )}
+              </div>
+              {link && (
+                <p className="claim-url" title={link}>
+                  {link}
+                </p>
+              )}
+              <footer>
+                <button
+                  type="button"
+                  className="button secondary"
+                  disabled={!canUpdate}
+                  onClick={() => openEdit(branch)}
+                >
+                  ตั้งค่าสาขา
+                </button>
+                <button
+                  type="button"
+                  className="button danger"
+                  disabled={!canUpdate}
+                  onClick={() => setDeleting(branch)}
+                >
+                  ลบสาขา
+                </button>
+              </footer>
+            </article>
+          );
+        })}
+      </div>
+      {deleting && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={() => !busy && setDeleting(null)}
+        >
+          <section
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="modal-head">
+              <div>
+                <div className="eyebrow">ลบสาขา</div>
+                <h2>ลบ {deleting.name} ?</h2>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                disabled={busy}
+                onClick={() => setDeleting(null)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="security-note">
+              ลบได้เฉพาะสาขาที่ยังไม่มีห้อง ผู้เช่า สัญญา ใบแจ้งหนี้
+              หรือรายการชำระ เพื่อป้องกันประวัติการเงินสูญหาย
+            </p>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="button ghost"
+                disabled={busy}
+                onClick={() => setDeleting(null)}
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                className="button danger"
+                disabled={busy}
+                onClick={() => void deleteBranch()}
+              >
+                {busy ? "กำลังลบ…" : "ยืนยันลบสาขา"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {open && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={() => !busy && setOpen(false)}
+        >
+          <section
+            className="modal branch-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="branch-modal-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="modal-head">
+              <div>
+                <div className="eyebrow">
+                  {editing ? "แก้ไขการเชื่อมต่อ" : "ตั้งค่าสาขาใหม่"}
+                </div>
+                <h2 id="branch-modal-title">
+                  {editing ? editing.name : "สาขาและ LINE OA"}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="ปิด"
+                disabled={busy}
+                onClick={() => setOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={save}>
+              <div className="form-section-title">
+                <span>1</span>
+                <div>
+                  <strong>ข้อมูลสาขา</strong>
+                  <small>ใช้ระบุบริบทของห้อง สัญญา และใบแจ้งหนี้</small>
+                </div>
+              </div>
+              <div className="form-row">
+                <label className="field">
+                  <span>ชื่อสาขา</span>
+                  <input
+                    value={form.name}
+                    onChange={(event) => set("name", event.target.value)}
+                    required
+                    disabled={busy}
+                    placeholder="เช่น สาขารังสิต"
+                  />
+                </label>
+                <label className="field">
+                  <span>รหัสสาขา</span>
+                  <input
+                    value={form.code}
+                    onChange={(event) => set("code", event.target.value)}
+                    required
+                    disabled={busy}
+                    placeholder="RANGSIT"
+                  />
+                </label>
+              </div>
+              <label className="field">
+                <span>ที่อยู่</span>
+                <textarea
+                  value={form.address}
+                  onChange={(event) => set("address", event.target.value)}
+                  disabled={busy}
+                  placeholder="สำหรับแสดงในเอกสารและใบแจ้งหนี้"
+                  rows={2}
+                />
+              </label>
+              <label className="field">
+                <span>เบอร์โทรสาขา</span>
+                <input
+                  value={form.phone}
+                  onChange={(event) => set("phone", event.target.value)}
+                  disabled={busy}
+                  inputMode="tel"
+                  placeholder="02-000-0000"
+                />
+              </label>
+              <div className="form-section-title line-title">
+                <span>2</span>
+                <div>
+                  <strong>LINE MINI App</strong>
+                  <small>ใช้สำหรับ Login และเปิด Mini App ของผู้เช่า</small>
+                </div>
+              </div>
+              <label className="field">
+                <span>ชื่อ Mini App</span>
+                <input
+                  value={form.lineName}
+                  onChange={(event) => set("lineName", event.target.value)}
+                  required
+                  disabled={busy}
+                  placeholder="เช่น หอพัก Mini App"
+                />
+              </label>
+              <div className="form-row">
+                <label className="field">
+                  <span>Mini App Channel ID</span>
+                  <input
+                    value={form.miniChannelId}
+                    onChange={(event) =>
+                      set("miniChannelId", event.target.value)
+                    }
+                    required
+                    disabled={busy}
+                    autoComplete="off"
+                    placeholder="เช่น 2011332937"
+                  />
+                </label>
+                <label className="field">
+                  <span>LIFF ID</span>
+                  <input
+                    value={form.liffId}
+                    onChange={(event) => set("liffId", event.target.value)}
+                    required
+                    disabled={busy}
+                    autoComplete="off"
+                    placeholder="เช่น 2011332937-qQ"
+                  />
+                </label>
+              </div>
+              <label className="field">
+                <span>
+                  Mini App Channel secret{" "}
+                  {editing && <em>(เว้นว่างหากไม่เปลี่ยน)</em>}
+                </span>
+                <input
+                  type="password"
+                  value={form.miniChannelSecret}
+                  onChange={(event) =>
+                    set("miniChannelSecret", event.target.value)
+                  }
+                  required={!editing}
+                  disabled={busy}
+                  autoComplete="new-password"
+                />
+              </label>
+              <div className="form-section-title line-title">
+                <span>3</span>
+                <div>
+                  <strong>LINE Messaging API / Official Account</strong>
+                  <small>ใช้ส่งใบแจ้งหนี้ การแจ้งเตือน และรับ Webhook</small>
+                </div>
+              </div>
+              <label className="field">
+                <span>ชื่อสำหรับเรียก OA</span>
+                <input
+                  value={form.lineName}
+                  onChange={(event) => set("lineName", event.target.value)}
+                  required
+                  disabled={busy}
+                  placeholder="เช่น หอพัก Official Account"
+                />
+              </label>
+              <label className="field">
+                <span>Messaging API Channel ID</span>
+                <input
+                  value={form.messagingChannelId}
+                  onChange={(event) =>
+                    set("messagingChannelId", event.target.value)
+                  }
+                  required
+                  disabled={busy}
+                  autoComplete="off"
+                  placeholder="เช่น 2011334057"
+                />
+              </label>
+              <label className="field">
+                <span>
+                  Channel access token{" "}
+                  {editing && <em>(เว้นว่างหากไม่เปลี่ยน)</em>}
+                </span>
+                <input
+                  type="password"
+                  value={form.messagingAccessToken}
+                  onChange={(event) =>
+                    set("messagingAccessToken", event.target.value)
+                  }
+                  required={!editing}
+                  disabled={busy}
+                  autoComplete="new-password"
+                />
+              </label>
+              <label className="field">
+                <span>
+                  Messaging API Channel secret{" "}
+                  {editing && <em>(เว้นว่างหากไม่เปลี่ยน)</em>}
+                </span>
+                <input
+                  type="password"
+                  value={form.messagingSecret}
+                  onChange={(event) =>
+                    set("messagingSecret", event.target.value)
+                  }
+                  required={!editing}
+                  disabled={busy}
+                  autoComplete="new-password"
+                />
+              </label>
+              <p className="security-note">
+                ข้อมูลลับจะถูกส่งเข้ารหัสไปเก็บที่เซิร์ฟเวอร์
+                และจะไม่แสดงกลับในหน้าเว็บ
+              </p>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="button ghost"
+                  disabled={busy}
+                  onClick={() => setOpen(false)}
+                >
+                  ยกเลิก
+                </button>
+                <button type="submit" className="button" disabled={busy}>
+                  {busy
+                    ? "กำลังบันทึก…"
+                    : editing
+                      ? "บันทึกการตั้งค่า"
+                      : "สร้างสาขาและลิงก์"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+    </>
+  );
 }

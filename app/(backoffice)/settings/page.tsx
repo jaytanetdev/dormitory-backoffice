@@ -1,4 +1,5 @@
 "use client";
+import { usePermission } from "@/lib/use-permission";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -25,8 +26,16 @@ type PromptPaySetting = {
 };
 
 export default function Settings() {
-  const { selectedBranchId: branchId, selectedBranch, loading: branchesLoading } = useBranch();
-  const setting = useApiQuery<PromptPaySetting | null>(branchId ? `/branches/${branchId}/promptpay` : null, null);
+  const canUpdate = usePermission("settings.update");
+  const {
+    selectedBranchId: branchId,
+    selectedBranch,
+    loading: branchesLoading,
+  } = useBranch();
+  const setting = useApiQuery<PromptPaySetting | null>(
+    branchId ? `/branches/${branchId}/promptpay` : null,
+    null,
+  );
   const [type, setType] = useState<PromptPayType>("PHONE");
   const [target, setTarget] = useState("");
   const [accountName, setAccountName] = useState("");
@@ -34,7 +43,10 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const dueDaysForm = useForm<{ invoiceDueDays: number; lateFeePerDay: number }>({ defaultValues: { invoiceDueDays: 5, lateFeePerDay: 0 } });
+  const dueDaysForm = useForm<{
+    invoiceDueDays: number;
+    lateFeePerDay: number;
+  }>({ defaultValues: { invoiceDueDays: 5, lateFeePerDay: 0 } });
 
   useEffect(() => {
     const value = setting.data;
@@ -50,53 +62,214 @@ export default function Settings() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!branchId) return;
-    setSaving(true); setSaved(false); setError(null);
-    const result = await apiMutation<PromptPaySetting>(`/branches/${branchId}/promptpay`, {
-      type,
-      target: target.trim(),
-      accountName: accountName.trim(),
-      invoiceDueDays: dueDaysForm.getValues("invoiceDueDays"),
-      lateFeePerDay: dueDaysForm.getValues("lateFeePerDay"),
-    }, "PUT");
+    if (!canUpdate || saving || !branchId) return;
+    setSaving(true);
+    setSaved(false);
+    setError(null);
+    const result = await apiMutation<PromptPaySetting>(
+      `/branches/${branchId}/promptpay`,
+      {
+        type,
+        target: target.trim(),
+        accountName: accountName.trim(),
+        invoiceDueDays: dueDaysForm.getValues("invoiceDueDays"),
+        lateFeePerDay: dueDaysForm.getValues("lateFeePerDay"),
+      },
+      "PUT",
+    );
     setSaving(false);
-    if (!result.ok) { setError(result.message); return; }
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
     setPreview(result.data);
     setTarget(result.data.target);
     setAccountName(result.data.accountName);
     setSaved(true);
   }
 
-  const targetHelp = type === "PHONE"
-    ? "กรอกเบอร์โทรศัพท์ 10 หลัก เช่น 0812345678"
-    : type === "EWALLET"
-      ? "กรอกหมายเลข e-Wallet ที่ลงทะเบียน PromptPay"
-      : "กรอกเลข 13 หลักโดยไม่ต้องใส่ขีด";
+  const targetHelp =
+    type === "PHONE"
+      ? "กรอกเบอร์โทรศัพท์ 10 หลัก เช่น 0812345678"
+      : type === "EWALLET"
+        ? "กรอกหมายเลข e-Wallet ที่ลงทะเบียน PromptPay"
+        : "กรอกเลข 13 หลักโดยไม่ต้องใส่ขีด";
 
-  return <>
-    <PageHead title="ตั้งค่า PromptPay" subtitle="กำหนดบัญชีรับเงินแยกตามสาขา ระบบจะสร้าง QR ตามยอดใบแจ้งหนี้อัตโนมัติ" />
-    <ApiNotice loading={branchesLoading || setting.loading} error={setting.error || error} />
+  return (
+    <>
+      <PageHead
+        title="ตั้งค่า PromptPay"
+        subtitle="กำหนดบัญชีรับเงินแยกตามสาขา ระบบจะสร้าง QR ตามยอดใบแจ้งหนี้อัตโนมัติ"
+      />
+      <ApiNotice
+        loading={branchesLoading || setting.loading}
+        error={setting.error || error}
+      />
 
-    {!branchId ? <section className="form-panel promptpay-empty"><h2>ยังไม่ได้เลือกสาขา</h2><p>เลือกสาขาจากเมนูด้านบนก่อนตั้งค่าบัญชี PromptPay</p></section> : <div className="settings-grid promptpay-settings">
-      <form className="form-panel" onSubmit={submit}>
-        <div className="settings-divider"><span className="eyebrow">ตั้งค่าใบแจ้งหนี้</span><p>ระบบจะนับจากวันเข้าพักของผู้เช่าให้อัตโนมัติ</p></div>
-        <label className="field"><span>กำหนดชำระหลังวันเข้าพัก (วัน)</span><input type="number" min="0" max="31" step="1" {...dueDaysForm.register("invoiceDueDays", { valueAsNumber: true, min: 0, max: 31 })} disabled={saving} /><p className="help">ตัวอย่าง: ตั้ง 5 วัน ใบแจ้งหนี้จะครบกำหนด 5 วันหลังวันเข้าพัก</p></label>
-        <label className="field"><span>ค่าปรับชำระล่าช้า (บาท/วัน)</span><input type="number" min="0" max="10000" step="1" {...dueDaysForm.register("lateFeePerDay", { valueAsNumber: true, min: 0, max: 10000 })} disabled={saving} /><p className="help">ระบบจะคิดจากวันที่ชำระจริง ลบด้วยวันครบกำหนด</p></label>
-        <div className="promptpay-panel-head"><div><span className="eyebrow">บัญชีรับเงินของสาขา</span><h2>{selectedBranch?.name}</h2></div>{preview?.enabled && <span className="promptpay-active"><i />พร้อมใช้งาน</span>}</div>
+      {!branchId ? (
+        <section className="form-panel promptpay-empty">
+          <h2>ยังไม่ได้เลือกสาขา</h2>
+          <p>เลือกสาขาจากเมนูด้านบนก่อนตั้งค่าบัญชี PromptPay</p>
+        </section>
+      ) : (
+        <div className="settings-grid promptpay-settings">
+          <form className="form-panel" onSubmit={submit}>
+            <div className="settings-divider">
+              <span className="eyebrow">ตั้งค่าใบแจ้งหนี้</span>
+              <p>ระบบจะนับจากวันเข้าพักของผู้เช่าให้อัตโนมัติ</p>
+            </div>
+            <label className="field">
+              <span>กำหนดชำระหลังวันเข้าพัก (วัน)</span>
+              <input
+                type="number"
+                min="0"
+                max="31"
+                step="1"
+                {...dueDaysForm.register("invoiceDueDays", {
+                  valueAsNumber: true,
+                  min: 0,
+                  max: 31,
+                })}
+                disabled={saving}
+              />
+              <p className="help">
+                ตัวอย่าง: ตั้ง 5 วัน ใบแจ้งหนี้จะครบกำหนด 5 วันหลังวันเข้าพัก
+              </p>
+            </label>
+            <label className="field">
+              <span>ค่าปรับชำระล่าช้า (บาท/วัน)</span>
+              <input
+                type="number"
+                min="0"
+                max="10000"
+                step="1"
+                {...dueDaysForm.register("lateFeePerDay", {
+                  valueAsNumber: true,
+                  min: 0,
+                  max: 10000,
+                })}
+                disabled={saving}
+              />
+              <p className="help">
+                ระบบจะคิดจากวันที่ชำระจริง ลบด้วยวันครบกำหนด
+              </p>
+            </label>
+            <div className="promptpay-panel-head">
+              <div>
+                <span className="eyebrow">บัญชีรับเงินของสาขา</span>
+                <h2>{selectedBranch?.name}</h2>
+              </div>
+              {preview?.enabled && (
+                <span className="promptpay-active">
+                  <i />
+                  พร้อมใช้งาน
+                </span>
+              )}
+            </div>
 
-        <label className="field"><span>ประเภท PromptPay</span><Select value={type} onValueChange={(value) => setType(value as PromptPayType)} disabled={saving} options={[{ value: "PHONE", label: "เบอร์โทรศัพท์" }, { value: "TAX_ID", label: "เลขประจำตัวผู้เสียภาษี" }, { value: "NATIONAL_ID", label: "เลขบัตรประชาชน" }, { value: "EWALLET", label: "e-Wallet" }]} /></label>
-        <label className="field"><span>หมายเลขที่ผูก PromptPay</span><input value={target} onChange={(event) => setTarget(event.target.value)} inputMode="numeric" placeholder={type === "PHONE" ? "0812345678" : "กรอกหมายเลข PromptPay"} required disabled={saving} /><p className="help">{targetHelp}</p></label>
-        <label className="field"><span>ชื่อบัญชีที่แสดงให้ผู้เช่า</span><input value={accountName} onChange={(event) => setAccountName(event.target.value)} placeholder="เช่น หอพักสุขใจ" required disabled={saving} /></label>
+            <label className="field">
+              <span>ประเภท PromptPay</span>
+              <Select
+                value={type}
+                onValueChange={(value) => setType(value as PromptPayType)}
+                disabled={saving}
+                options={[
+                  { value: "PHONE", label: "เบอร์โทรศัพท์" },
+                  { value: "TAX_ID", label: "เลขประจำตัวผู้เสียภาษี" },
+                  { value: "NATIONAL_ID", label: "เลขบัตรประชาชน" },
+                  { value: "EWALLET", label: "e-Wallet" },
+                ]}
+              />
+            </label>
+            <label className="field">
+              <span>หมายเลขที่ผูก PromptPay</span>
+              <input
+                value={target}
+                onChange={(event) => setTarget(event.target.value)}
+                inputMode="numeric"
+                placeholder={
+                  type === "PHONE" ? "0812345678" : "กรอกหมายเลข PromptPay"
+                }
+                required
+                disabled={saving}
+              />
+              <p className="help">{targetHelp}</p>
+            </label>
+            <label className="field">
+              <span>ชื่อบัญชีที่แสดงให้ผู้เช่า</span>
+              <input
+                value={accountName}
+                onChange={(event) => setAccountName(event.target.value)}
+                placeholder="เช่น หอพักสุขใจ"
+                required
+                disabled={saving}
+              />
+            </label>
 
-        <button className="button promptpay-save" disabled={saving || !target.trim() || !accountName.trim()}>{saving ? <><span className="button-spinner" />กำลังบันทึก…</> : "บันทึกการตั้งค่า"}</button>
-        {saved && <p className="promptpay-saved" role="status">✓ บันทึก PromptPay สำหรับ {selectedBranch?.name} แล้ว</p>}
-      </form>
+            <button
+              className="button promptpay-save"
+              disabled={
+                !canUpdate || saving || !target.trim() || !accountName.trim()
+              }
+            >
+              {saving ? (
+                <>
+                  <span className="button-spinner" />
+                  กำลังบันทึก…
+                </>
+              ) : (
+                "บันทึกการตั้งค่า"
+              )}
+            </button>
+            {saved && (
+              <p className="promptpay-saved" role="status">
+                ✓ บันทึก PromptPay สำหรับ {selectedBranch?.name} แล้ว
+              </p>
+            )}
+          </form>
 
-      <section className="form-panel promptpay-preview">
-        <div><span className="eyebrow">ตรวจสอบก่อนใช้งาน</span><h2>ตัวอย่าง QR จริง</h2><p className="subtitle">QR นี้สร้างด้วยข้อมูลที่บันทึกของสาขาปัจจุบัน</p></div>
-        {preview?.qrDataUrl ? <div className="promptpay-qr-card"><Image src={preview.qrDataUrl} alt="ตัวอย่าง QR PromptPay" width={210} height={210} unoptimized /><strong>฿{preview.previewAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</strong><span>{preview.accountName}</span><small>{preview.target}</small></div> : <div className="promptpay-no-preview"><div>QR</div><strong>ยังไม่ได้ตั้งค่า</strong><p>กรอกข้อมูลแล้วกดบันทึก เพื่อดู QR ที่สร้างจาก Backend จริง</p></div>}
-        <p className="help">เมื่อออกใบแจ้งหนี้ ระบบจะใช้บัญชีของสาขานี้และใส่ยอดค้างชำระลงใน QR โดยอัตโนมัติ</p>
-      </section>
-    </div>}
-  </>;
+          <section className="form-panel promptpay-preview">
+            <div>
+              <span className="eyebrow">ตรวจสอบก่อนใช้งาน</span>
+              <h2>ตัวอย่าง QR จริง</h2>
+              <p className="subtitle">
+                QR นี้สร้างด้วยข้อมูลที่บันทึกของสาขาปัจจุบัน
+              </p>
+            </div>
+            {preview?.qrDataUrl ? (
+              <div className="promptpay-qr-card">
+                <Image
+                  src={preview.qrDataUrl}
+                  alt="ตัวอย่าง QR PromptPay"
+                  width={210}
+                  height={210}
+                  unoptimized
+                />
+                <strong>
+                  ฿
+                  {preview.previewAmount.toLocaleString("th-TH", {
+                    minimumFractionDigits: 2,
+                  })}
+                </strong>
+                <span>{preview.accountName}</span>
+                <small>{preview.target}</small>
+              </div>
+            ) : (
+              <div className="promptpay-no-preview">
+                <div>QR</div>
+                <strong>ยังไม่ได้ตั้งค่า</strong>
+                <p>
+                  กรอกข้อมูลแล้วกดบันทึก เพื่อดู QR ที่สร้างจาก Backend จริง
+                </p>
+              </div>
+            )}
+            <p className="help">
+              เมื่อออกใบแจ้งหนี้ ระบบจะใช้บัญชีของสาขานี้และใส่ยอดค้างชำระลงใน
+              QR โดยอัตโนมัติ
+            </p>
+          </section>
+        </div>
+      )}
+    </>
+  );
 }
