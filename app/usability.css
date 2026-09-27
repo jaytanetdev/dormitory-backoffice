@@ -176,19 +176,86 @@ body {
   color: var(--sidebar-ink);
 }
 .sidebar .sidebar-quota {
-  background: var(--sidebar-hover);
-  border: 1px solid var(--sidebar-line);
-  border-radius: 10px;
+  --quota-surface: #fffcf7;
+  --quota-ink: #424854;
+  --quota-muted: #69717e;
+  --quota-track: #f1dfce;
+  --quota-accent: #b93d10;
+  background: var(--quota-surface);
+  border: 1px solid #ffffff66;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 4px 14px #76320c18;
+}
+:root[data-theme="dark"] .sidebar .sidebar-quota {
+  --quota-surface: #34302c;
+  --quota-ink: #fff2e5;
+  --quota-muted: #d1c1b1;
+  --quota-track: #514239;
+  --quota-accent: #ffb37c;
+  border-color: #615044;
+  box-shadow: none;
 }
 .sidebar .sidebar-quota-head span,
 .sidebar .sidebar-quota-foot {
-  color: var(--sidebar-muted);
+  color: var(--quota-muted);
+  font-size: 11px;
 }
-.sidebar .sidebar-quota-head b {
-  color: var(--sidebar-ink);
+.sidebar .sidebar-quota-head .sidebar-quota-badge {
+  color: var(--quota-accent);
+  background: var(--quota-track);
+  border-radius: 5px;
+  padding: 2px 5px;
+  font-size: 10px;
+}
+.sidebar-quota-remaining {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 8px;
+}
+.sidebar .sidebar-quota-remaining b {
+  color: var(--quota-accent);
+  font-size: 28px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.sidebar-quota-remaining span {
+  color: var(--quota-muted);
+  font-size: 11px;
 }
 .sidebar .sidebar-quota-track {
-  background: var(--sidebar-line);
+  background: var(--quota-track);
+  height: 7px;
+}
+.sidebar .sidebar-quota-track i {
+  background: var(--quota-accent);
+}
+.sidebar-quota-reset {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-top: 1px solid var(--quota-track);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+.sidebar-quota-reset svg {
+  width: 16px;
+  height: 16px;
+  color: var(--quota-accent);
+  flex-shrink: 0;
+}
+.sidebar-quota-reset span,
+.sidebar-quota-reset small {
+  display: block;
+  color: var(--quota-muted);
+  font-size: 10px;
+}
+.sidebar .sidebar-quota-reset strong {
+  display: block;
+  color: var(--quota-ink);
+  font-size: 12px;
+  margin: 2px 0;
 }
 .topbar {
   background: var(--surface);

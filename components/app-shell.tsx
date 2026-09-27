@@ -11,6 +11,7 @@ import { InteractionFeedback } from "./interaction-feedback";
 import { BranchProvider, useBranch } from "./branch-context";
 import { useApiQuery } from "@/lib/use-api";
 import { Select } from "./ui/select";
+import { lineQuotaMonthLabel } from "@/lib/line-quota";
 
 const groups = [
   { label:"บิลและการเงิน", items:[{href:"/dashboard",label:"ภาพรวม",icon:"dashboard"},{href:"/bills",label:"ใบแจ้งหนี้",icon:"bill"},{href:"/payments",label:"ตรวจสลิป",icon:"payment"},{href:"/calendar",label:"ปฏิทินชำระเงิน",icon:"calendar"},{href:"/reports",label:"รายงานการเงิน",icon:"chart"}] },
@@ -65,13 +66,22 @@ function ShellContent({ children }: { children: React.ReactNode }) {
 }
 
 function LineQuotaSidebar({ quota, loading }: { quota?: { configured: boolean; usage: number | null; quota: number | null; remaining: number | null }; loading: boolean }) {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const limit = quota?.quota ?? 0;
   const used = quota?.usage ?? 0;
+  const known = quota?.quota != null && quota?.usage != null && quota?.remaining != null;
   const percent = limit ? Math.min(100, (used / limit) * 100) : 0;
   return <section className="sidebar-quota" aria-label="โควตาแจ้งเตือน LINE">
-    <div className="sidebar-quota-head"><span>โควตาแจ้งเตือน</span><b>{loading ? "กำลังโหลด" : quota?.remaining == null ? "—" : quota.remaining.toLocaleString("th-TH")}</b></div>
-    <div className="sidebar-quota-track"><i style={{ width: `${percent}%` }} /></div>
-    <div className="sidebar-quota-foot"><span>{quota?.configured ? `ใช้ไป ${used.toLocaleString("th-TH")} ข้อความ` : "ยังไม่ได้เชื่อม LINE OA"}</span>{quota?.configured && <span>{Math.round(percent)}%</span>}</div>
+    <div className="sidebar-quota-head"><span>โควตา LINE เดือนนี้</span><span className="sidebar-quota-badge">รายเดือน</span></div>
+    <div className="sidebar-quota-remaining"><b>{loading ? "…" : quota?.remaining == null ? "—" : quota.remaining.toLocaleString("th-TH")}</b><span>ข้อความคงเหลือ</span></div>
+    {known && <><div className="sidebar-quota-track" role="progressbar" aria-label="โควตา LINE ที่ใช้แล้ว" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><i style={{ width: percent + "%" }} /></div>
+    <div className="sidebar-quota-foot"><span>ใช้ {used.toLocaleString("th-TH")} / {limit.toLocaleString("th-TH")}</span><span>{Math.round(percent)}%</span></div></>}
+    <div className="sidebar-quota-reset"><Icon name="calendar"/><div><span>เริ่มรอบเดือนถัดไป</span><strong>{now ? lineQuotaMonthLabel(now) : "กำลังโหลด…"}</strong><small>โควตารายเดือนตาม LINE</small></div></div>
   </section>;
 }
 
