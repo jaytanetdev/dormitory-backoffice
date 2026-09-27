@@ -47,7 +47,7 @@ export default function BillsPage() {
   const [roomFilter, setRoomFilter] = useState<"all" | "missing" | "done">("missing");
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDto | null>(null);
 
-  useEffect(() => { if (new URLSearchParams(window.location.search).get("view") === "done") setRoomFilter("done"); }, []);
+  useEffect(() => { const params=new URLSearchParams(window.location.search); if(params.get("view") === "done") setRoomFilter("done"); if(params.get("query")) setQuery(params.get("query")!); const year=Number(params.get("year")),month=Number(params.get("month"));if(Number.isInteger(year) && year>=2000 && year<=2100)setBillingYear(year);if(Number.isInteger(month) && month>=1 && month<=12)setBillingMonth(month); }, []);
   useEffect(() => { setOpen(false); setContractId(""); setSelectedInvoice(null); setError(null); setNotice(null); }, [branchId]);
   const activeContracts = useMemo(() => contracts.data.filter((contract) => contract.status === "ACTIVE"), [contracts.data]);
   const selectedContract = activeContracts.find((contract) => contract.id === contractId);

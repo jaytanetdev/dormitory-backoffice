@@ -27,10 +27,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function ShellContent({ children }: { children: React.ReactNode }) {
   const path = usePathname(); const router=useRouter(); const [open,setOpen]=useState(false); const [navigating,setNavigating]=useState(false);
   const { branches, selectedBranchId, selectBranch, loading: branchesLoading } = useBranch();
-  const me = useApiQuery<{ isPlatformAdmin:boolean }>("/auth/me", { isPlatformAdmin:false });
+  const me = useApiQuery<{ isPlatformAdmin:boolean;displayName?:string;roleName?:string;permissions:string[] }>("/auth/me", { isPlatformAdmin:false,permissions:[] });
   const lineQuota = useQuery({
     queryKey: ["api", "line-quota-sidebar", selectedBranchId],
-    enabled: Boolean(selectedBranchId),
+    enabled: Boolean(selectedBranchId) && me.data.permissions.includes("notification.send"),
     queryFn: async () => {
       const result = await apiGet<{ configured: boolean; usage: number | null; quota: number | null; remaining: number | null }>(`/line/quota?branchId=${selectedBranchId}`, { configured: false, usage: null, quota: null, remaining: null });
       if (!result.ok) throw new Error(result.message);
@@ -48,13 +48,15 @@ function ShellContent({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("line-quota-updated", refreshQuota);
   }, [queryClient, selectedBranchId]);
   useEffect(()=>setNavigating(false),[path]);
+  const menuPermissions:Record<string,string[]>={"/dashboard":["invoice.view","property.view"],"/stores":["branch.view"],"/rooms":["property.view","room.view"],"/residents":["resident.view"],"/bills":["invoice.view"],"/calendar":["invoice.view"],"/payments":["payment.view"],"/reports":["report.view"],"/chat":["notification.send"],"/users":["user.view"],"/roles":["role.view"],"/settings":["settings.view"]};
+  const visibleGroups=groups.map(group=>({...group,items:group.items.filter(item=>(item.href !== "/roles" || me.data.isPlatformAdmin) && (menuPermissions[item.href] ?? []).every(permission=>me.data.permissions.includes(permission)))})).filter(group=>group.items.length);
   const current = groups.flatMap(g=>g.items).find(i=>path.startsWith(i.href))?.label ?? "ภาพรวม";
   return <div className="app-shell"><InteractionFeedback />
     <aside className={`sidebar ${open?"open":""}`} aria-label="เมนูหลัก">
       <div className="brand"><div className="brand-mark" aria-hidden="true"><i/><i/><i/><i/></div><div><strong>ห้องบัญชี</strong><small>Dormitory Ledger</small></div></div>
-      <nav className="nav">{[...(me.data?.isPlatformAdmin ? [platformGroup] : []), ...groups].map(group=><div key={group.label}><div className="nav-label">{group.label}</div>{group.items.filter(item=>item.href !== "/roles" || me.data?.isPlatformAdmin).map(item=><Link key={item.href} href={item.href} className={path.startsWith(item.href)?"active":""} onClick={()=>{setOpen(false);if(!path.startsWith(item.href))setNavigating(true)}}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</div>)}</nav>
-      <div className="sidebar-foot"><div className="avatar">สท</div><div><strong>สมชาย ทองดี</strong><button onClick={()=>{clearSession();router.replace("/login")}} style={{border:0,background:"none",padding:0,color:"#8290a9",fontSize:11,cursor:"pointer"}}>ออกจากระบบ</button></div></div>
-      <LineQuotaSidebar quota={lineQuota.data} loading={lineQuota.isPending} />
+      <nav className="nav">{[...(me.data?.isPlatformAdmin ? [platformGroup] : []), ...visibleGroups].map(group=><div key={group.label}><div className="nav-label">{group.label}</div>{group.items.filter(item=>item.href !== "/roles" || me.data?.isPlatformAdmin).map(item=><Link key={item.href} href={item.href} className={path.startsWith(item.href)?"active":""} onClick={()=>{setOpen(false);if(!path.startsWith(item.href))setNavigating(true)}}><Icon name={item.icon}/><span>{item.label}</span></Link>)}</div>)}</nav>
+      <div className="sidebar-foot"><div className="avatar">{me.data.displayName?.slice(0,2) ?? "ทีม"}</div><div><strong>{me.data.displayName ?? "สมาชิกทีม"}</strong><small>{me.data.roleName}</small><button className="sidebar-signout" onClick={()=>{clearSession();router.replace("/login")}}>ออกจากระบบ</button></div></div>
+      {me.data.permissions.includes("notification.send") && <LineQuotaSidebar quota={lineQuota.data} loading={lineQuota.isPending} />}
     </aside>
     <main className="main">
       <header className="topbar"><button className="icon-button mobile-menu" onClick={()=>setOpen(v=>!v)} aria-label="เปิดเมนู">☰</button><div className="crumb">ห้องบัญชี&nbsp; / &nbsp;<strong>{current}</strong></div><div className="top-actions"><ThemeToggle /><Select className="branch-select" placeholder={branchesLoading ? "กำลังโหลดสาขา…" : "เลือกสาขา"} value={selectedBranchId ?? undefined} disabled={branchesLoading || !branches.length} onValueChange={(value)=>selectBranch(value || null)} options={branches.map((branch)=>({ value:branch.id, label:branch.name }))} /></div></header>

@@ -1,47 +1,361 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ApiNotice } from "@/components/api-notice";
 import { PageHead } from "@/components/page-head";
 import { Select } from "@/components/ui/select";
-import { Status } from "@/components/status";
+import { useBranch } from "@/components/branch-context";
 import { apiMutation } from "@/lib/api";
 import type { RoleDto, UserDto } from "@/lib/api-types";
 import { useApiQuery } from "@/lib/use-api";
-
 const emptyUsers: UserDto[] = [];
 const emptyRoles: RoleDto[] = [];
-
 export default function Users() {
-  const users = useApiQuery<UserDto[]>("/users", emptyUsers);
-  const roles = useApiQuery<RoleDto[]>("/roles", emptyRoles);
-  const [items, setItems] = useState<UserDto[]>([]);
+  const users = useApiQuery("/users", emptyUsers);
+  const roles = useApiQuery("/users/assignable-roles", emptyRoles);
+  const me = useApiQuery<{
+    id: string;
+    permissions: string[];
+    allBranches: boolean;
+    branchIds: string[];
+  }>("/auth/me", {
+    id: "",
+    permissions: [],
+    allBranches: false,
+    branchIds: [],
+  });
+  const { branches } = useBranch();
+  const cache = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<UserDto>();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("ALL");
   const [roleId, setRoleId] = useState("");
-
-  useEffect(() => setItems(users.data), [users.data]);
-  useEffect(() => { if (!roleId && roles.data[0]) setRoleId(roles.data[0].id); }, [roles.data, roleId]);
-
-  async function invite(event: React.FormEvent<HTMLFormElement>) {
+  const [allBranches, setAllBranches] = useState(false);
+  const [branchIds, setBranchIds] = useState<string[]>([]);
+  const [status, setStatus] = useState("ACTIVE");
+  const canCreate = me.data.permissions.includes("user.create");
+  const canUpdate = me.data.permissions.includes("user.update");
+  const visible = users.data.filter(
+    (user) =>
+      (filter === "ALL" || user.status === filter) &&
+      (user.displayName + " " + user.email + " " + user.role.name)
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+  );
+  function edit(user?: UserDto) {
+    setEditing(user);
+    setRoleId(user?.role.id ?? roles.data[0]?.id ?? "");
+    setAllBranches(user?.allBranches ?? false);
+    setBranchIds(user?.branches.map((item) => item.branch.id) ?? []);
+    setStatus(user?.status ?? "ACTIVE");
+    setError(undefined);
+    setOpen(true);
+  }
+  async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
-    setError(null);
+    setError(undefined);
     const form = new FormData(event.currentTarget);
-    const role = roles.data.find((item) => item.id === roleId);
-    const result = await apiMutation<UserDto>("/users", { displayName: String(form.get("displayName")), email: String(form.get("email")), password: String(form.get("password")), roleId, allBranches: true, branchIds: [] });
+    const payload = {
+      displayName: String(form.get("displayName")).trim(),
+      roleId,
+      allBranches,
+      branchIds: allBranches ? [] : branchIds,
+      ...(editing
+        ? { status }
+        : {
+            email: String(form.get("email")),
+            password: String(form.get("password")),
+          }),
+    };
+    const result = await apiMutation<UserDto>(
+      editing ? "/users/" + editing.id : "/users",
+      payload,
+      editing ? "PATCH" : "POST",
+    );
     setBusy(false);
-    if (!result.ok) { setError(result.message); return; }
-    setItems((current) => [...current, { ...result.data, role: role || { id: roleId, name: "ผู้ใช้งาน" }, branches: [], allBranches: true, status: "ACTIVE" } as UserDto]);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    await cache.invalidateQueries({ queryKey: ["api", "/users"] });
     setOpen(false);
   }
-
-  return <>
-    <PageHead title="ผู้ใช้งาน" subtitle="สร้างบัญชี เลือกบทบาท และจัดการสมาชิกทีม" />
-    <ApiNotice loading={users.loading || roles.loading} error={users.error || roles.error || error} />
-    <div className="page-head-actions"><button type="button" className="button" onClick={() => setOpen(true)}>＋ เชิญผู้ใช้งาน</button></div>
-    {open && <div className="modal-backdrop" onMouseDown={() => !busy && setOpen(false)}><section className="modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">เพิ่มสมาชิกทีม</div><h2>เชิญผู้ใช้งาน</h2></div><button type="button" className="icon-button" onClick={() => setOpen(false)} disabled={busy}>×</button></div><form onSubmit={invite}><label className="field"><span>ชื่อที่แสดง</span><input name="displayName" required disabled={busy} /></label><label className="field"><span>อีเมล</span><input name="email" type="email" required disabled={busy} /></label><label className="field"><span>รหัสผ่านเริ่มต้น</span><input name="password" type="password" minLength={8} required disabled={busy} /></label><label className="field"><span>บทบาท</span><Select name="roleId" value={roleId} onValueChange={setRoleId} disabled={busy || !roles.data.length} placeholder="เลือกบทบาท" options={roles.data.map((role) => ({ value: role.id, label: role.name }))} /></label><div className="modal-actions"><button type="button" className="button ghost" onClick={() => setOpen(false)} disabled={busy}>ยกเลิก</button><button className="button" disabled={busy || !roleId}>{busy ? "กำลังสร้าง…" : "สร้างผู้ใช้งาน"}</button></div></form></section></div>}
-    <div className="table-wrap"><table className="data-table"><thead><tr><th>ชื่อ</th><th>อีเมล</th><th>บทบาท</th><th>สาขา</th><th>สถานะ</th></tr></thead><tbody>{items.map((user) => <tr key={user.id}><td><strong>{user.displayName}</strong></td><td>{user.email}</td><td>{user.role.name}</td><td>{user.allBranches ? "ทุกสาขา" : user.branches.map((branch) => branch.branch.name).join(", ") || "—"}</td><td><Status>{user.status === "ACTIVE" ? "ใช้งาน" : "ปิดใช้งาน"}</Status></td></tr>)}</tbody></table></div>
-  </>;
+  return (
+    <>
+      <PageHead
+        title="สมาชิกทีม"
+        subtitle="ค้นหาสมาชิก เลือกบทบาท และกำหนดสาขาที่ดูแล"
+      />
+      <ApiNotice
+        loading={users.loading || roles.loading || me.loading}
+        error={users.error || roles.error || me.error || error || null}
+      />
+      <div className="team-summary">
+        <span>
+          สมาชิกทั้งหมด <b>{users.data.length}</b>
+        </span>
+        <span>
+          ใช้งาน{" "}
+          <b>{users.data.filter((user) => user.status === "ACTIVE").length}</b>
+        </span>
+        <span>
+          พักบัญชี{" "}
+          <b>
+            {users.data.filter((user) => user.status === "SUSPENDED").length}
+          </b>
+        </span>
+      </div>
+      <div className="toolbar">
+        <input
+          className="search"
+          aria-label="ค้นหาสมาชิกทีม"
+          placeholder="ค้นหาชื่อ อีเมล หรือบทบาท"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <Select
+          className="filter"
+          value={filter}
+          onValueChange={setFilter}
+          options={[
+            { value: "ALL", label: "ทุกสถานะ" },
+            { value: "ACTIVE", label: "ใช้งาน" },
+            { value: "SUSPENDED", label: "พักบัญชี" },
+            { value: "INVITED", label: "รอเปิดใช้งาน" },
+          ]}
+        />
+        {canCreate && (
+          <button className="button" onClick={() => edit()}>
+            ＋ เพิ่มสมาชิกทีม
+          </button>
+        )}
+      </div>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>สมาชิก</th>
+              <th>บทบาท</th>
+              <th>สาขาที่ดูแล</th>
+              <th>สถานะ</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((user) => (
+              <tr key={user.id}>
+                <td>
+                  <strong>{user.displayName}</strong>
+                  <small className="team-email">{user.email}</small>
+                </td>
+                <td>
+                  {user.role.name}
+                  <small className="team-email">
+                    {user.role.isSystem ? "บัญชีระบบ" : "สมาชิกทีม"}
+                  </small>
+                </td>
+                <td>
+                  {user.allBranches
+                    ? "ทุกสาขา"
+                    : user.branches
+                        .map((item) => item.branch.name)
+                        .join(", ") || "ยังไม่เลือกสาขา"}
+                </td>
+                <td>
+                  <span
+                    className={
+                      "team-status " +
+                      (user.status === "ACTIVE" ? "active" : "")
+                    }
+                  >
+                    {user.status === "ACTIVE"
+                      ? "ใช้งาน"
+                      : user.status === "SUSPENDED"
+                        ? "พักบัญชี"
+                        : "รอเปิดใช้งาน"}
+                  </span>
+                </td>
+                <td>
+                  {canUpdate && user.canManage && (
+                    <button
+                      className="button secondary"
+                      onClick={() => edit(user)}
+                    >
+                      แก้ไข
+                    </button>
+                  )}
+                  {user.id === me.data.id && (
+                    <span className="muted">บัญชีของคุณ</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!visible.length && !users.loading && (
+          <p className="empty-state">ไม่พบสมาชิกที่ตรงกับการค้นหา</p>
+        )}
+      </div>
+      <section className="role-guide">
+        <h2>เลือกบทบาทอย่างไร</h2>
+        {roles.data.map((role) => (
+          <article key={role.id}>
+            <strong>{role.name}</strong>
+            <p>{role.description || "สิทธิ์ตามที่ผู้ดูแลระบบกำหนด"}</p>
+            <span>{role.permissions.length} สิทธิ์</span>
+          </article>
+        ))}
+        {!roles.loading && !roles.error && !roles.data.length && (
+          <p>
+            ยังไม่มีบทบาทที่คุณมอบหมายได้ ให้ Platform Admin
+            สร้างบทบาทของทีมก่อน
+          </p>
+        )}
+      </section>
+      {open && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={() => !busy && setOpen(false)}
+        >
+          <section
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={editing ? "แก้ไขสมาชิกทีม" : "เพิ่มสมาชิกทีม"}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="modal-head">
+              <h2>{editing ? "แก้ไขสมาชิกทีม" : "เพิ่มสมาชิกทีม"}</h2>
+              <button
+                className="icon-button"
+                aria-label="ปิด"
+                onClick={() => setOpen(false)}
+                disabled={busy}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={save}>
+              <label className="field">
+                <span>ชื่อสมาชิก</span>
+                <input
+                  name="displayName"
+                  defaultValue={editing?.displayName}
+                  required
+                  disabled={busy}
+                />
+              </label>
+              {!editing && (
+                <>
+                  <label className="field">
+                    <span>อีเมลเข้าสู่ระบบ</span>
+                    <input name="email" type="email" required disabled={busy} />
+                  </label>
+                  <label className="field">
+                    <span>รหัสผ่านเริ่มต้น</span>
+                    <input
+                      name="password"
+                      type="password"
+                      minLength={8}
+                      autoComplete="new-password"
+                      required
+                      disabled={busy}
+                    />
+                  </label>
+                </>
+              )}
+              <label className="field">
+                <span>บทบาท</span>
+                <Select
+                  value={roleId}
+                  onValueChange={setRoleId}
+                  disabled={busy}
+                  placeholder="เลือกบทบาท"
+                  options={roles.data.map((role) => ({
+                    value: role.id,
+                    label: role.name,
+                  }))}
+                />
+              </label>
+              <p className="help">
+                {roles.data.find((role) => role.id === roleId)?.description}
+              </p>
+              <fieldset className="team-branches" disabled={busy}>
+                <legend>สาขาที่ดูแล</legend>
+                {me.data.allBranches && (
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={allBranches}
+                      onChange={(event) => setAllBranches(event.target.checked)}
+                    />
+                    ทุกสาขา
+                  </label>
+                )}
+                {!allBranches &&
+                  branches.map((branch) => (
+                    <label key={branch.id}>
+                      <input
+                        type="checkbox"
+                        checked={branchIds.includes(branch.id)}
+                        onChange={(event) =>
+                          setBranchIds((current) =>
+                            event.target.checked
+                              ? [...current, branch.id]
+                              : current.filter((id) => id !== branch.id),
+                          )
+                        }
+                      />
+                      {branch.name}
+                    </label>
+                  ))}
+              </fieldset>
+              {editing && (
+                <label className="field">
+                  <span>สถานะบัญชี</span>
+                  <Select
+                    value={status}
+                    onValueChange={setStatus}
+                    options={[
+                      { value: "ACTIVE", label: "ใช้งาน" },
+                      { value: "SUSPENDED", label: "พักบัญชี" },
+                      { value: "INVITED", label: "รอเปิดใช้งาน" },
+                    ]}
+                  />
+                </label>
+              )}
+              {error && (
+                <p className="error-text" role="alert">
+                  {error}
+                </p>
+              )}
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="button secondary"
+                  disabled={busy}
+                  onClick={() => setOpen(false)}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  className="button"
+                  disabled={
+                    busy || !roleId || (!allBranches && !branchIds.length)
+                  }
+                >
+                  {busy ? "กำลังบันทึก…" : "บันทึกสมาชิก"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+    </>
+  );
 }

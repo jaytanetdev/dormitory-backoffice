@@ -3,7 +3,7 @@ export interface BranchDto { id:string; name:string; code:string; claimCode?:str
 export interface RoleDto { id:string; name:string; description?:string|null; isSystem?:boolean; scopeLevel?:"PLATFORM"|"STORE"|"BRANCH"; permissions:{permission:{key:string}}[]; _count?:{users:number} }
 export interface PlatformStoreDto { id:string; name:string; slug:string; branches:{id:string;name:string;code:string}[]; _count:{branches:number;users:number;invoices:number} }
 export interface PermissionGroupDto { module:string; actions:{key:string;action:string;description:string|null}[] }
-export interface UserDto { id:string;email:string;displayName:string;status:string;allBranches:boolean;role:{id:string;name:string};branches:{branch:{id:string;name:string}}[] }
+export interface UserDto { id:string;email:string;displayName:string;status:string;allBranches:boolean;canManage?:boolean;role:{id:string;name:string;isSystem?:boolean;scopeLevel?:string};branches:{branch:{id:string;name:string}}[] }
 export interface ApiRoom { monthlyRent:number|string; id:string;number:string;floor:string|null;status:"VACANT"|"OCCUPIED"|"RESERVED"|"MAINTENANCE";roomType:{name:string;baseRent:number|string} }
 export interface PropertyDto { id:string;name:string;type:string;buildings:{id:string;name:string;rooms:ApiRoom[]}[] }
 export interface ResidentDto { id:string;fullName:string;phone:string|null;lineIdentity:{id:string}|null;contracts:{id:string;status:string;startDate?:string;endDate?:string|null;room:{id:string;number:string}}[] }
