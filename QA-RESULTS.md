@@ -37,3 +37,7 @@ Install dependencies with pnpm, then run the commands in QA-TEST-CASES.md. Brows
 ## Follow-up: modal dismiss contrast
 
 A later screenshot exposed a CSS cascade bug: primary action text color also applied to ghost buttons. Ghost buttons now retain the theme text color, have a visible border, and include hover/focus states. B39 checks normal text contrast >= 4.5:1 and successful dismissal in light/dark themes on both desktop and mobile. This targeted follow-up is separate from the full-run totals above.
+
+## Follow-up: reports layout
+
+Consolidated year/month filters and export into one compact toolbar; grouped summary totals and aligned the invoice ledger with other pages. Mobile totals stack with clear labels. Replaced legacy purple export hover/focus colors with theme tokens and preserved disabled styling. B15 checks both themes for page overflow and captures screenshots; B28 verifies CSV output on desktop/mobile. Production build passed.

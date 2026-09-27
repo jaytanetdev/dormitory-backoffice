@@ -170,10 +170,16 @@ test("B14 failed approval preserves pending row", async ({ page, state }) => {
   ).toContainText("ทดสอบ API ขัดข้อง");
   await expect(page.getByRole("button", { name: "อนุมัติยอด" })).toBeEnabled();
 });
-test("B15 reports display approved and unpaid totals", async ({ page }) => {
+test("B15 reports display approved and unpaid totals", async ({ page }, info) => {
   await page.goto("/reports");
   await expect(page.getByText("INV-QA-1")).toBeVisible();
   await expect(page.getByText("INV-QA-5")).toBeVisible();
+  for (const theme of ["light", "dark"]) {
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
+    await noOverflow(page);
+    await expect(page.getByRole("button", { name: "ดาวน์โหลด CSV" })).toBeVisible();
+    await page.screenshot({ path: info.outputPath("reports-" + theme + ".png"), fullPage: true, animations: "disabled", scale: "css" });
+  }
 });
 test("B16 room search and vacant invite", async ({ page, state }) => {
   await page.goto("/rooms");
