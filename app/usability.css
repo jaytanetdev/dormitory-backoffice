@@ -55,7 +55,7 @@ body {
   background: var(--paper);
 }
 .app-shell {
-  grid-template-columns: 224px minmax(0, 1fr);
+  grid-template-columns: 252px minmax(0, 1fr);
 }
 .app-shell > .sidebar {
   --sidebar-ink: #ffffff;
@@ -67,11 +67,11 @@ body {
   color: var(--sidebar-ink);
   background: var(--sidebar);
   border-right: 1px solid var(--sidebar-line);
-  padding: 24px 14px 16px;
+  padding: 20px 14px 16px;
 }
 .sidebar .brand {
   border: 0;
-  padding: 0 10px 20px;
+  padding: 0 10px 16px;
 }
 .sidebar .brand strong,
 .sidebar .sidebar-foot strong {
@@ -100,18 +100,34 @@ body {
   outline-offset: 2px;
 }
 .sidebar .nav-label {
-  font-size: 11px;
-  padding: 17px 12px 7px;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 12px 12px 6px;
 }
 .sidebar .nav {
   padding-top: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff80 transparent;
+}
+.sidebar .nav > div + div {
+  margin-top: 8px;
+  border-top: 1px solid var(--sidebar-line);
 }
 .sidebar .nav a {
   color: var(--sidebar-muted);
-  font-size: 13px;
-  padding: 11px 12px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  min-height: 44px;
+  padding: 10px 12px;
+  gap: 12px;
   border-radius: 10px;
   margin-bottom: 3px;
+}
+.sidebar .nav a svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 .sidebar .nav a:hover {
   background: var(--sidebar-hover);
@@ -121,7 +137,17 @@ body {
   background: var(--sidebar-selected);
   box-shadow: none;
   color: var(--sidebar-active);
-  font-weight: 650;
+  font-weight: 700;
+}
+.app-shell .sidebar .nav > div a.active::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: rotate(45deg);
+  flex-shrink: 0;
 }
 .sidebar .nav a.active svg {
   color: var(--sidebar-active);
@@ -620,7 +646,7 @@ body {
 }
 @media (max-width: 1100px) and (min-width: 721px) {
   .app-shell {
-    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-columns: 236px minmax(0, 1fr);
   }
   .content {
     padding: 24px;
@@ -688,7 +714,7 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 244px;
+    width: min(280px, calc(100vw - 48px));
     height: 100dvh;
     transform: translateX(-100%);
     transition: transform 0.18s;
