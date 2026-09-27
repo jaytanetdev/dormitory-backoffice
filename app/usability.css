@@ -3,7 +3,7 @@
   --paper: #d7d9d2;
   --surface: #e6e7e1;
   --surface-soft: #dde0d7;
-  --sidebar: #dfe2d8;
+  --sidebar: #fb8b32;
   --room-occupied: #397e69;
   --room-vacant: #9da892;
   --room-reserved: #916923;
@@ -29,7 +29,7 @@
   --paper: #1c231e;
   --surface: #252e27;
   --surface-soft: #2e3930;
-  --sidebar: #212a23;
+  --sidebar: #ed7824;
   --room-occupied: #73aa91;
   --room-vacant: #8e9b86;
   --room-reserved: #c0a267;
@@ -58,8 +58,15 @@ body {
   grid-template-columns: 224px minmax(0, 1fr);
 }
 .app-shell > .sidebar {
+  --sidebar-ink: #40220e;
+  --sidebar-muted: #663815;
+  --sidebar-line: #40220e26;
+  --sidebar-hover: #ffffff26;
+  --sidebar-selected: #fff3e5;
+  --sidebar-active: #9d3e0c;
+  color: var(--sidebar-ink);
   background: var(--sidebar);
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--sidebar-line);
   padding: 24px 14px 16px;
 }
 .sidebar .brand {
@@ -68,18 +75,29 @@ body {
 }
 .sidebar .brand strong,
 .sidebar .sidebar-foot strong {
-  color: var(--ink);
+  color: var(--sidebar-ink);
   font-size: 14px;
 }
 .sidebar .brand small,
+.sidebar .sidebar-foot small,
 .sidebar .nav-label {
-  color: var(--muted);
+  color: var(--sidebar-muted);
 }
 .sidebar .brand-mark {
-  background: var(--action);
+  background: var(--sidebar-selected);
   border-radius: 11px;
   width: 34px;
   height: 34px;
+}
+.sidebar .brand-mark i {
+  background: var(--sidebar-active);
+  opacity: 1;
+}
+.sidebar .nav a:focus-visible,
+.sidebar-signout:focus-visible,
+.sidebar-close:focus-visible {
+  outline: 2px solid var(--sidebar-ink);
+  outline-offset: 2px;
 }
 .sidebar .nav-label {
   font-size: 11px;
@@ -89,54 +107,54 @@ body {
   padding-top: 0;
 }
 .sidebar .nav a {
-  color: var(--muted);
+  color: var(--sidebar-muted);
   font-size: 13px;
   padding: 11px 12px;
   border-radius: 10px;
   margin-bottom: 3px;
 }
 .sidebar .nav a:hover {
-  background: var(--surface-soft);
-  color: var(--ink);
+  background: var(--sidebar-hover);
+  color: var(--sidebar-ink);
 }
 .app-shell .sidebar .nav > div a.active {
-  background: var(--orange-soft);
+  background: var(--sidebar-selected);
   box-shadow: none;
-  color: var(--blue);
+  color: var(--sidebar-active);
   font-weight: 650;
 }
 .sidebar .nav a.active svg {
-  color: var(--blue);
+  color: var(--sidebar-active);
 }
 .sidebar .sidebar-foot {
-  border-color: var(--line);
+  border-color: var(--sidebar-line);
   padding-top: 16px;
   gap: 10px;
 }
 .sidebar .avatar {
-  color: var(--blue);
-  background: var(--orange-soft);
+  color: var(--sidebar-active);
+  background: var(--sidebar-selected);
 }
 .sidebar-signout {
-  color: var(--muted);
+  color: var(--sidebar-muted);
 }
 .sidebar-signout:hover {
-  color: var(--blue);
+  color: var(--sidebar-active);
 }
 .sidebar .sidebar-quota {
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
+  background: var(--sidebar-hover);
+  border: 1px solid var(--sidebar-line);
   border-radius: 10px;
 }
 .sidebar .sidebar-quota-head span,
 .sidebar .sidebar-quota-foot {
-  color: var(--muted);
+  color: var(--sidebar-muted);
 }
 .sidebar .sidebar-quota-head b {
-  color: var(--ink);
+  color: var(--sidebar-ink);
 }
 .sidebar .sidebar-quota-track {
-  background: var(--line);
+  background: var(--sidebar-line);
 }
 .topbar {
   background: var(--surface);
@@ -857,8 +875,8 @@ body {
     height: 28px;
     border: 0;
     border-radius: 8px;
-    background: var(--surface-soft);
-    color: var(--ink);
+    background: var(--sidebar-selected);
+    color: var(--sidebar-active);
     font-size: 22px;
     cursor: pointer;
   }
