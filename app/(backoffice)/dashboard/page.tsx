@@ -374,16 +374,16 @@ export default function Dashboard() {
                     <thead>
                       <tr>
                         <th>เดือน</th>
-                        <th>เรียกเก็บ</th>
-                        <th>รับชำระแล้ว</th>
+                        <th className="numeric">เรียกเก็บ</th>
+                        <th className="numeric">รับชำระแล้ว</th>
                       </tr>
                     </thead>
                     <tbody>
                       {trend.map((item, index) => (
                         <tr key={index}>
                           <td>{item.label}</td>
-                          <td>{money(item.billed)}</td>
-                          <td>{money(item.received)}</td>
+                          <td className="numeric">{money(item.billed)}</td>
+                          <td className="numeric">{money(item.received)}</td>
                         </tr>
                       ))}
                     </tbody>

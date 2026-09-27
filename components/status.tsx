@@ -1,1 +1,15 @@
-export function Status({children}:{children:string}) { const cls=children.includes("ชำระแล้ว")||children.includes("อนุมัติ")?"paid":children.includes("เกิน")||children.includes("ปฏิเสธ")?"overdue":children.includes("รอ")?"pending":""; return <span className={`status ${cls}`}>{children}</span>; }
+const statusClass = (label: string) => {
+  if (label.includes("บางส่วน")) return "partial";
+  if (/เกินกำหนด|ปฏิเสธ|ยกเลิก|พักบัญชี/.test(label)) return "overdue";
+  if (/รอ|จอง/.test(label)) return "pending";
+  if (
+    /ชำระแล้ว|อนุมัติ|มีผู้เช่า|กำลังเช่า|เชื่อมแล้ว/.test(label) ||
+    label === "ใช้งาน"
+  )
+    return "paid";
+  return "";
+};
+
+export function Status({ children }: { children: string }) {
+  return <span className={"status " + statusClass(children)}>{children}</span>;
+}

@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiNotice } from "@/components/api-notice";
+import { TableIdentity } from "@/components/table-identity";
+import { Status } from "@/components/status";
 import { PageHead } from "@/components/page-head";
 import { Select } from "@/components/ui/select";
 import { useBranch } from "@/components/branch-context";
@@ -135,7 +137,13 @@ export default function Users() {
           </button>
         )}
       </div>
-      <div className="table-wrap">
+      <div
+        className="table-wrap"
+        role="region"
+        aria-label="ตารางสมาชิกทีม"
+        tabIndex={0}
+      >
+        <p className="table-scroll-hint">เลื่อนซ้าย–ขวาเพื่อดูข้อมูลทั้งหมด</p>
         <table className="data-table">
           <thead>
             <tr>
@@ -143,18 +151,22 @@ export default function Users() {
               <th>บทบาท</th>
               <th>สาขาที่ดูแล</th>
               <th>สถานะ</th>
-              <th>จัดการ</th>
+              <th className="table-actions-cell">จัดการ</th>
             </tr>
           </thead>
           <tbody>
             {visible.map((user) => (
               <tr key={user.id}>
                 <td>
-                  <strong>{user.displayName}</strong>
-                  <small className="team-email">{user.email}</small>
+                  <TableIdentity
+                    label={user.displayName}
+                    description={user.email}
+                    badge={user.displayName.trim().slice(0, 2) || "?"}
+                    avatar
+                  />
                 </td>
                 <td>
-                  {user.role.name}
+                  <span className="table-role">{user.role.name}</span>
                   <small className="team-email">
                     {user.role.isSystem ? "บัญชีระบบ" : "สมาชิกทีม"}
                   </small>
@@ -167,20 +179,15 @@ export default function Users() {
                         .join(", ") || "ยังไม่เลือกสาขา"}
                 </td>
                 <td>
-                  <span
-                    className={
-                      "team-status " +
-                      (user.status === "ACTIVE" ? "active" : "")
-                    }
-                  >
+                  <Status>
                     {user.status === "ACTIVE"
                       ? "ใช้งาน"
                       : user.status === "SUSPENDED"
                         ? "พักบัญชี"
                         : "รอเปิดใช้งาน"}
-                  </span>
+                  </Status>
                 </td>
-                <td>
+                <td className="table-actions-cell">
                   {canUpdate && user.canManage && (
                     <button
                       className="button secondary"

@@ -99,8 +99,9 @@ body {
   background: var(--surface-soft);
   color: var(--ink);
 }
-.sidebar .nav a.active {
+.app-shell .sidebar .nav > div a.active {
   background: var(--orange-soft);
+  box-shadow: none;
   color: var(--blue);
   font-weight: 650;
 }
@@ -1014,4 +1015,12 @@ body {
   .trend-column > .chart-tooltip {
     width: 198px;
   }
+}
+
+.content .summary-strip .metric strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.content .summary-strip .metric::before {
+  display: none;
 }

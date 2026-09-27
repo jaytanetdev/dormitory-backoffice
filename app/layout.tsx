@@ -4,6 +4,7 @@ import "./chat.css";
 import "./quota.css";
 import "./theme.css";
 import "./usability.css";
+import "./tables.css";
 import { QueryProvider } from "@/components/query-provider";
 
 export const metadata: Metadata = { title: "ห้องบัญชี — ระบบจัดการหอพัก", description: "Backoffice สำหรับร้าน สาขา ห้อง บิล และผู้เช่า" };
